@@ -313,9 +313,6 @@ Module ConjuctiveQueryData (T : Types) (S : Schemas T) (R : Relations T S).
     Qed.
   End TransitiveJoin.
 
-  Instance fullArrow {A B} `{Full A} `{Full B} : Full (A -> B).
-  Admitted.
-
   Instance fullForall {A B} `{Full A}
                             `{forall a:A, Full (B a)} : 
                              Full (forall a : A, B a).
@@ -327,24 +324,40 @@ Module ConjuctiveQueryData (T : Types) (S : Schemas T) (R : Relations T S).
   Arguments selections {_ _ _ _} _.
   Arguments projection {_ _ _ _} _ _.
 
+  Require Import EqDec.
+
   (* `query0 r <= query1 r`
       every tuple of `query0 r` is contained in `query1 r` *)
   Section Correctness.
     Variable r:ConjunctiveQueryRewrite.
     
-    Context `{Basic}.
-    Context `{Full (TableName r)}.
-    Context `{forall tn, Full (TableAlias (query0 r) tn)}.
-    Context `{forall tn, Full (TableAlias (query1 r) tn)}.
+    Context {B:Basic}.
+    Context {S:@Search B}.
+
+    Context `{@Full B (TableName r)}.
+    Context `{forall st tn, @Full B (columnName r st tn)}.
+    Context `{forall tn, @Full B (TableAlias (query0 r) tn)}.
+    Context `{forall tn, @Full B (TableAlias (query1 r) tn)}.
+
+    Context `{eqDec (TableName r)}.
+    Context `{forall st tn, eqDec (columnName r st tn)}.
+    Context `{forall tn, eqDec (TableAlias (query0 r) tn)}.
+    Context `{forall tn, eqDec (TableAlias (query1 r) tn)}.
 
     Definition Assignment := (forall tn:TableName r, TableAlias (query1 r) tn -> TableAlias (query0 r) tn).
-    
-    Instance freeAssignment : Full Assignment.
+   
+    Instance fullAssignment : @Full B Assignment.
       unfold Assignment. 
-      eapply fullForall. 
+      refine (_).
     Defined.
 
+    Definition AccessQ0 st := Access (SQLType r) (TableName r) (columnName r) (TableAlias (query0 r)) st.
+    Definition AccessQ1 st := Access (SQLType r) (TableName r) (columnName r) (TableAlias (query1 r)) st.
 
+    Instance eqDecAccess st : eqDec (AccessQ1 st).
+      unfold Access.
+      refine (_).
+    Defined.
 (*
     Variable TableName : Type.
     Variable columnName : type -> TableName -> Type.
@@ -363,21 +376,66 @@ http://www.sciencedirect.com/science/article/pii/S0022000000917136
 
 *)
 
-    Context `{Search}.
- 
+    Require Import Bool.
+
+    Coercion sumBoolToBool {P Q} (pq:{P} + {Q}) : bool :=
+      if pq then Datatypes.true else Datatypes.false.
+
+    Definition assignmentAccess {st} (a:Assignment) (ac:AccessQ1 st) : AccessQ0 st.
+        unfold AccessQ0, AccessQ1, Access in *.
+        refine (let tn := ac.1 in _).
+        refine (let ta := fst ac.2 in _).
+        refine (let cn := snd ac.2 in _).
+        refine (tn; (a tn ta, cn)).
+    Defined.
+
     Definition containment : Result Assignment.
       refine (search _).
-      refine (bind (full Assignment) (fun a => _)).
+      refine (all (fun a : Assignment => _)).
+      unfold Assignment in a.
+      refine (if (_:bool) then single a else empty).
+      refine (_ && _).
+      - (* check selection variables are equal *)
+        refine (forallb _  (selections (query1 r))).
+        intros ac.
+        refine (assignmentAccess a (fst ac.2) =? assignmentAccess a (snd ac.2)).
+      - (* check projection variables are equal *)
+        refine (forallb _  (projectionTypes r)).
+        intros T.
+        exact Datatypes.true. (* TODO wrong *)
+    Defined.
+    
+    Require Import JamesTactics.
+    Require Import CpdtTactics.
 
-    (*     
-        create a variable for every single Access,
-        then say that a bunch of them are equal
-
-
-
-        refine ()
-    *)
-    Admitted.
+    Lemma containmentSolution {a} (h:containment = solution a) :
+      forall ac : {st : SQLType r & (AccessQ1 st * AccessQ1 st)}, 
+        List.In ac (selections (query1 r)) -> 
+          assignmentAccess a (fst ac.2) = assignmentAccess a (snd ac.2).
+    Proof.
+      intros ac inSel.
+      unfold containment in *.
+      apply searchSolution in h.
+      rewrite denoteAllOk in h.
+      destruct h as [a' h].
+      break_match; revgoals. {
+        specialize (@denoteEmptyOk B Assignment); intros h'.
+        unfold Ensemble in h'.
+        rewrite h' in h; clear h'.
+        destruct h.
+      }
+      specialize (@denoteSingleOk B Assignment); intros h'.
+      unfold Ensemble in h'.
+      rewrite h' in h; clear h'.
+      destruct h.
+      rename Heqb into h.
+      rewrite andb_true_iff in h.
+      destruct h as [h _].
+      rewrite forallb_forall in h.
+      specialize (h ac inSel).
+      unfold sumBoolToBool in h.
+      break_match; intuition.
+    Qed.
 
     Definition soundContainment : option (denoteConjunctiveQueryRewriteContainment r).
       refine ((match containment as c return containment = c -> _ with
@@ -389,20 +447,34 @@ http://www.sciencedirect.com/science/article/pii/S0022000000917136
       intros Γ s T c q g t [t0 [[select from] project]].
       unfold Assignment in a.
       refine (ex_intro _ (fun tn ta => t0 tn (a tn ta)) _).
+      specialize (containmentSolution ctEq); intros h; clear ctEq.
       constructor; [constructor|].
-      - unfold denoteSelection.
+      - (* selection variables are correct *)
+        unfold denoteSelection.
         induction (selections (query1 r)) as [|sel sels rec].
         + simpl.
           trivial.
         + simpl.
-          constructor; [|apply rec].
-          clear rec sels.
-          destruct sel as [st [[tn [ta cn]] [tn' [ta' cn']]]].
-          simpl.
-          admit.
-      - intros tn ta.
+          constructor.
+          * clear rec.
+            destruct sel as [st [[tn [ta cn]] [tn' [ta' cn']]]].
+            simpl.
+            simpl in h.
+            match goal with
+            | h:forall _, ?a = _ \/ _ -> _ |- _ => specialize (h a (or_introl eq_refl))
+            end.
+            unfold assignmentAccess in h.
+            simpl in h.
+            crush.
+          * apply rec.
+            intros ac inSel.
+            apply h.
+            crush.
+      - (* from clause is correct *)
+        intros tn ta.
         apply from.
-      - rewrite <- project; clear select project.
+      - (* projection variables are correct *)
+        rewrite <- project; clear select project.
         unfold fromSchema in *.
         simpl.
         (* induction (projectionTypes r). *)
