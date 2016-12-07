@@ -115,7 +115,7 @@ Module ConjuctiveQueryData (T : Types) (S : Schemas T) (R : Relations T S).
       WHERE denoteSelection.
   End ConjunctiveQuery.
  
-  Record ConjunctiveQueryRewrite := {
+  Record ConjunctiveQueryRewrite := conjunctiveQueryRewrite {
     SQLType : Type;
     TableName : Type;
     columnName : SQLType -> TableName -> Type;
@@ -329,30 +329,36 @@ Module ConjuctiveQueryData (T : Types) (S : Schemas T) (R : Relations T S).
   (* `query0 r <= query1 r`
       every tuple of `query0 r` is contained in `query1 r` *)
   Section Correctness.
-    Variable r:ConjunctiveQueryRewrite.
-    
+    Variable SQLType : Type.
+    Variable TableName : Type.
+    Variable columnName : SQLType -> TableName -> Type.
+    Variable projectionTypes : list SQLType.
+    Variable query0 : ConjunctiveQuery SQLType TableName columnName projectionTypes.
+    Variable query1 : ConjunctiveQuery SQLType TableName columnName projectionTypes.
+    Definition r := conjunctiveQueryRewrite SQLType TableName columnName projectionTypes query0 query1.
+   
     Context {B:Basic}.
     Context {S:@Search B}.
 
-    Context `{@Full B (TableName r)}.
-    Context `{forall st tn, @Full B (columnName r st tn)}.
-    Context `{forall tn, @Full B (TableAlias (query0 r) tn)}.
-    Context `{forall tn, @Full B (TableAlias (query1 r) tn)}.
+    Context `{@Full B TableName}.
+    Context `{forall st tn, @Full B (columnName st tn)}.
+    Context `{forall tn, @Full B (TableAlias query0 tn)}.
+    Context `{forall tn, @Full B (TableAlias query1 tn)}.
 
-    Context `{eqDec (TableName r)}.
-    Context `{forall st tn, eqDec (columnName r st tn)}.
-    Context `{forall tn, eqDec (TableAlias (query0 r) tn)}.
-    Context `{forall tn, eqDec (TableAlias (query1 r) tn)}.
+    Context `{eqDec TableName}.
+    Context `{forall st tn, eqDec (columnName st tn)}.
+    Context `{forall tn, eqDec (TableAlias query0 tn)}.
+    Context `{forall tn, eqDec (TableAlias query1 tn)}.
 
-    Definition Assignment := (forall tn:TableName r, TableAlias (query1 r) tn -> TableAlias (query0 r) tn).
+    Definition Assignment := (forall tn:TableName, TableAlias query1 tn -> TableAlias query0 tn).
    
     Instance fullAssignment : @Full B Assignment.
       unfold Assignment. 
       refine (_).
     Defined.
 
-    Definition AccessQ0 st := Access (SQLType r) (TableName r) (columnName r) (TableAlias (query0 r)) st.
-    Definition AccessQ1 st := Access (SQLType r) (TableName r) (columnName r) (TableAlias (query1 r)) st.
+    Definition AccessQ0 st := Access SQLType TableName columnName (TableAlias query0) st.
+    Definition AccessQ1 st := Access SQLType TableName columnName (TableAlias query1) st.
 
     Instance eqDecAccess st : eqDec (AccessQ1 st).
       unfold Access.
@@ -396,11 +402,11 @@ http://www.sciencedirect.com/science/article/pii/S0022000000917136
       refine (if (_:bool) then single a else empty).
       refine (_ && _).
       - (* check selection variables are equal *)
-        refine (forallb _  (selections (query1 r))).
+        refine (forallb _  (selections query1)).
         intros ac.
         refine (assignmentAccess a (fst ac.2) =? assignmentAccess a (snd ac.2)).
       - (* check projection variables are equal *)
-        refine (forallb _  (projectionTypes r)).
+        refine (forallb _  projectionTypes).
         intros T.
         exact Datatypes.true. (* TODO wrong *)
     Defined.
@@ -408,12 +414,18 @@ http://www.sciencedirect.com/science/article/pii/S0022000000917136
     Require Import JamesTactics.
     Require Import CpdtTactics.
 
-    Lemma containmentSolution {a} (h:containment = solution a) :
-      forall ac : {st : SQLType r & (AccessQ1 st * AccessQ1 st)}, 
-        List.In ac (selections (query1 r)) -> 
-          assignmentAccess a (fst ac.2) = assignmentAccess a (snd ac.2).
-    Proof.
-      intros ac inSel.
+    Check projection.
+
+    Definition containment' : option {a |
+        (forall ac : {st : SQLType & (AccessQ1 st * AccessQ1 st)}, 
+          List.In ac (selections query1) -> 
+            assignmentAccess a (fst ac.2) = assignmentAccess a (snd ac.2))
+        /\
+        (forall i:index projectionTypes, 
+            assignmentAccess a (projection query1 i) = projection query0 i)
+      }.
+      destruct containment as [a|] eqn:h; [|exact None].
+      refine (Some (exist _ a _)).
       unfold containment in *.
       apply searchSolution in h.
       rewrite denoteAllOk in h.
@@ -427,31 +439,33 @@ http://www.sciencedirect.com/science/article/pii/S0022000000917136
       specialize (@denoteSingleOk B Assignment); intros h'.
       unfold Ensemble in h'.
       rewrite h' in h; clear h'.
-      destruct h.
+      destruct h; rename a' into a.
       rename Heqb into h.
       rewrite andb_true_iff in h.
-      destruct h as [h _].
-      rewrite forallb_forall in h.
-      specialize (h ac inSel).
-      unfold sumBoolToBool in h.
-      break_match; intuition.
-    Qed.
+      constructor.
+      - destruct h as [h _].
+        rewrite forallb_forall in h.
+        intros ac inSel.
+        specialize (h ac inSel).
+        unfold sumBoolToBool in h.
+        break_match; intuition.
+      - destruct h as [_ h].
+        intros i.
+        admit.
+    Admitted.
 
     Definition soundContainment : option (denoteConjunctiveQueryRewriteContainment r).
-      refine ((match containment as c return containment = c -> _ with
-      | solution a => fun ctEq => Some _
-      | uninhabited => fun _ => None
-      end) _); [|reflexivity].
+      destruct containment' as [[a [h h']]|]; [|exact None].
+      refine (Some _).
       unfold denoteConjunctiveQueryRewriteContainment.
       simpl.
       intros Γ s T c q g t [t0 [[select from] project]].
-      unfold Assignment in a.
       refine (ex_intro _ (fun tn ta => t0 tn (a tn ta)) _).
-      specialize (containmentSolution ctEq); intros h; clear ctEq.
       constructor; [constructor|].
       - (* selection variables are correct *)
+        clear h'.
         unfold denoteSelection.
-        induction (selections (query1 r)) as [|sel sels rec].
+        induction (selections query1) as [|sel sels rec].
         + simpl.
           trivial.
         + simpl.
@@ -467,9 +481,7 @@ http://www.sciencedirect.com/science/article/pii/S0022000000917136
             simpl in h.
             crush.
           * apply rec.
-            intros ac inSel.
-            apply h.
-            crush.
+            intuition.
       - (* from clause is correct *)
         intros tn ta.
         apply from.
@@ -477,8 +489,18 @@ http://www.sciencedirect.com/science/article/pii/S0022000000917136
         rewrite <- project; clear select project.
         unfold fromSchema in *.
         simpl.
-        (* induction (projectionTypes r). *)
-        idtac.
+(*        Arguments denoteProjection {_ _ _} _ {_ _ _ _} _. *)
+
+        unfold Assignment in a.
+        clear h h'.
+        induction projectionTypes as [|st sts rec].
+        + simpl.
+          reflexivity.
+        + simpl.
+          f_equal.
+          * clear rec.
+            admit.
+          * admit.
     Admitted.
   End Correctness.
 End ConjuctiveQueryData.
