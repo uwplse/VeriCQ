@@ -1,0 +1,10 @@
+.cabal-sandbox/
+**#*#
+**~
+src/**/*.scm
+src/coq/Makefile
+src/**/*.glob
+src/**/*.v.d
+src/**/*.vo
+src/**/*.aux
+src/**/compiled
