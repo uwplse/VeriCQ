@@ -16,19 +16,6 @@ Notation "( x ; y )" := (existT _ x y).
 Notation "x .1" := (projT1 x) (at level 3, format "x '.1'").
 Notation "x .2" := (projT2 x) (at level 3, format "x '.2'").
 
-Inductive index {A} : list A -> Type :=
-| found a l : index (a::l)
-| next  a l : index l -> index (a::l).
-
-Fixpoint lookup {A} {l:list A} (i:index l) :=
-  match i with
-  | found a _ => a
-  | next _ _ i' => lookup i'
-  end.
-
-Arguments found [_ _ _].
-Arguments next [_ _ _] _.
-
 Module ConjuctiveQueryData (T : Types) (S : Schemas T) (R : Relations T S).
   Import T S R.
   Module SQL_TSR := SQL T S R.
@@ -40,9 +27,8 @@ Module ConjuctiveQueryData (T : Types) (S : Schemas T) (R : Relations T S).
     Variable SQLType : Type.
     Variable TableName : Type.
     Variable columnName : SQLType -> TableName -> Type.
-    Variable projectionTypes : list SQLType.
-
-    Definition Access (TableAlias : TableName -> Type) (t:SQLType) := {tn : TableName & (TableAlias tn * columnName t tn)}.
+    Variable ProjName : Type.
+    Variable projType : ProjName -> SQLType.
 
     Record ConjunctiveQuery := {
       (* NOTE we originally had:
@@ -51,10 +37,15 @@ Module ConjuctiveQueryData (T : Types) (S : Schemas T) (R : Relations T S).
       `TableAlias : TableName -> Type`
       this was less convenient to work with, 
       because enumerating all Aliases to the same table was harder.
+
+      we originally had a list of projection types, but then
+      the projection had to depend on the types in that list,
+      which was hard to induct over. The named approach is much easier now.
       *)
       TableAlias : TableName -> Type;
-      selections :  list {t:SQLType & (Access TableAlias t * Access TableAlias t)};
-      projection (i:index projectionTypes) : Access TableAlias (lookup i)
+      Access (st:SQLType) := {tn : TableName & (TableAlias tn * columnName st tn)};
+      selections : list {st:SQLType & (Access st * Access st)};
+      projection (pn:ProjName) : Access (projType pn)
     }.
 
     Variable Γ:Schema.
@@ -64,17 +55,12 @@ Module ConjuctiveQueryData (T : Types) (S : Schemas T) (R : Relations T S).
     Variable q:forall (tn:TableName), SQL Γ (s tn).
     Variable cq:ConjunctiveQuery.
 
-    Definition projSchema : Schema.
-      refine ((fix rec (sts:list _) := _) projectionTypes).
-      refine (match sts with
-      | [] => SQLSemantics.empty
-      | st::sts => node (leaf (t st)) (rec sts)
-      end).
-    Defined. 
+    Definition projSchema : Schema := 
+      namedNode ProjName (fun pn => leaf (t (projType pn))).
 
     Definition fromSchema := namedNode TableName (fun tn => namedNode (TableAlias cq tn) (const (s tn))).
 
-    Definition access {st} (a : Access (TableAlias cq) st) : Column (t st) (Γ ++ fromSchema).
+    Definition access {st} (a : Access cq st) : Column (t st) (Γ ++ fromSchema).
       unfold Access in a.
       refine (right ⋅ _).
       refine (name (a.1) ⋅ _).
@@ -99,15 +85,8 @@ Module ConjuctiveQueryData (T : Types) (S : Schemas T) (R : Relations T S).
       - exact (access (snd sel.2)).
     Defined.
 
-    Definition denoteProjection : Proj (Γ ++ fromSchema) projSchema.
-      specialize (projection cq); intros proj.
-      unfold projSchema.
-      induction (projectionTypes) as [|st sts rec].
-      - exact erase.
-      - refine (combine _ _).
-        + exact (access (proj found)).
-        + exact (rec (fun i => proj (next i))).
-    Defined.          
+    Definition denoteProjection : Proj (Γ ++ fromSchema) projSchema :=
+       named (fun pn => access (projection cq pn)).
 
     Definition denoteConjunctiveQuery : SQL Γ projSchema :=
       SELECT1 denoteProjection 
@@ -119,9 +98,10 @@ Module ConjuctiveQueryData (T : Types) (S : Schemas T) (R : Relations T S).
     SQLType : Type;
     TableName : Type;
     columnName : SQLType -> TableName -> Type;
-    projectionTypes : list SQLType;
-    query0 : ConjunctiveQuery SQLType TableName columnName projectionTypes; 
-    query1 : ConjunctiveQuery SQLType TableName columnName projectionTypes
+    ProjName : Type;
+    projType : ProjName -> SQLType;
+    query0 : ConjunctiveQuery SQLType TableName columnName ProjName projType; 
+    query1 : ConjunctiveQuery SQLType TableName columnName ProjName projType
   }.
 
   Definition denoteConjunctiveQueryRewriteContainment (r:ConjunctiveQueryRewrite) : Type.
@@ -130,9 +110,9 @@ Module ConjuctiveQueryData (T : Types) (S : Schemas T) (R : Relations T S).
     refine (forall (T:SQLType r -> type), _).
     refine (forall (c:forall (st:SQLType r) (tn:TableName r) (cn:columnName r st tn), Column (T st) (s tn)), _).
     refine (forall (q:(forall (tn:TableName r), SQL Γ (s tn))), _).
-    refine (forall (g:Tuple Γ) (t:Tuple (projSchema (SQLType r) (projectionTypes r) T)), (⟦ Γ ⊢ _ : _ ⟧ g t : Prop) -> ⟦ Γ ⊢ _ : _ ⟧ g t : Prop).
-    - refine (denoteConjunctiveQuery _ _ _ _ Γ s T c q (query0 r)).
-    - refine (denoteConjunctiveQuery _ _ _ _ Γ s T c q (query1 r)).
+    refine (forall (g:Tuple Γ) (t:Tuple (projSchema _ _ (projType r) T)), (⟦ Γ ⊢ _ : _ ⟧ g t : Prop) -> ⟦ Γ ⊢ _ : _ ⟧ g t : Prop).
+    - refine (denoteConjunctiveQuery _ _ _ _ _ Γ s T c q (query0 r)).
+    - refine (denoteConjunctiveQuery _ _ _ _ _ Γ s T c q (query1 r)).
   Defined. 
 
   Definition denoteConjunctiveQueryRewriteEquivalence (r:ConjunctiveQueryRewrite) : Type.
@@ -142,13 +122,14 @@ Module ConjuctiveQueryData (T : Types) (S : Schemas T) (R : Relations T S).
     refine (forall (c:forall (st:SQLType r) (tn:TableName r) (cn:columnName r st tn), Column (T st) (s tn)), _).
     refine (forall (q:(forall (tn:TableName r), SQL Γ (s tn))), _).
     refine (⟦ Γ ⊢ _ : _ ⟧ = ⟦ Γ ⊢ _ : _ ⟧).
-    - refine (denoteConjunctiveQuery _ _ _ _ Γ s T c q (query0 r)).
-    - refine (denoteConjunctiveQuery _ _ _ _ Γ s T c q (query1 r)).
+    - refine (denoteConjunctiveQuery _ _ _ _ _ Γ s T c q (query0 r)).
+    - refine (denoteConjunctiveQuery _ _ _ _ _ Γ s T c q (query1 r)).
   Defined. 
 
   Module SelfJoin.
     Inductive tables := R.
     Inductive columns := a.
+    Inductive projs := w.
     Inductive aliases0 := x | y.
     Inductive aliases1 := z.
     Inductive types := string.
@@ -157,13 +138,14 @@ Module ConjuctiveQueryData (T : Types) (S : Schemas T) (R : Relations T S).
       refine {|
         TableName := tables;
         columnName t tn := columns;
-        projectionTypes := [string];
+        ProjName := projs;
+        projType pn := string;
         query0 := {| TableAlias tn := aliases0; 
-                     projection i := (R;(x,a));
+                     projection pn := (R;(x,a));
                      selections := [(string; ((R;(x,a)), (R;(y,a))))]
                   |};
         query1 := {| TableAlias tn := aliases1; 
-                     projection i := (R;(z,a));
+                     projection pn := (R;(z,a));
                      selections := []
                   |}
       |}.
@@ -234,6 +216,7 @@ Module ConjuctiveQueryData (T : Types) (S : Schemas T) (R : Relations T S).
   Module TransitiveJoin.
     Inductive tables := R.
     Inductive columns := a | b | c.
+    Inductive projs := w.
     Inductive aliases := x.
     Variable string : type.
 
@@ -241,14 +224,15 @@ Module ConjuctiveQueryData (T : Types) (S : Schemas T) (R : Relations T S).
       refine {|
         TableName := tables;
         columnName t tn := columns;
-        projectionTypes := [string];
+        ProjName := projs;
+        projType pn := string;
         query0 := {| TableAlias tn := aliases; 
-                     projection i := (R;(x,a));
+                     projection pn := (R;(x,a));
                      selections := [(string; ((R;(x,a)), (R;(x,b))));
                                     (string; ((R;(x,b)), (R;(x,c))))]
                   |};
         query1 := {| TableAlias tn := aliases; 
-                     projection i := (R;(x,a));
+                     projection pn := (R;(x,a));
                      selections := [(string; ((R;(x,a)), (R;(x,b))));
                                     (string; ((R;(x,a)), (R;(x,c))))]
                   |}
@@ -320,9 +304,10 @@ Module ConjuctiveQueryData (T : Types) (S : Schemas T) (R : Relations T S).
 
   Arguments full [_] _ [_].
 
-  Arguments TableAlias {_ _ _ _} _ _.
-  Arguments selections {_ _ _ _} _.
-  Arguments projection {_ _ _ _} _ _.
+  Arguments TableAlias {_ _ _ _ _} _ _.
+  Arguments selections {_ _ _ _ _} _.
+  Arguments projection {_ _ _ _ _} _ _.
+  Arguments Access {_ _ _ _ _} _ _.
 
   Require Import EqDec.
 
@@ -332,20 +317,23 @@ Module ConjuctiveQueryData (T : Types) (S : Schemas T) (R : Relations T S).
     Variable SQLType : Type.
     Variable TableName : Type.
     Variable columnName : SQLType -> TableName -> Type.
-    Variable projectionTypes : list SQLType.
-    Variable query0 : ConjunctiveQuery SQLType TableName columnName projectionTypes.
-    Variable query1 : ConjunctiveQuery SQLType TableName columnName projectionTypes.
-    Definition r := conjunctiveQueryRewrite SQLType TableName columnName projectionTypes query0 query1.
+    Variable ProjName : Type.
+    Variable projType : ProjName -> SQLType.
+    Variable query0 : ConjunctiveQuery SQLType TableName columnName ProjName projType.
+    Variable query1 : ConjunctiveQuery SQLType TableName columnName ProjName projType.
+    Definition r := conjunctiveQueryRewrite SQLType TableName columnName ProjName projType query0 query1.
    
     Context {B:Basic}.
     Context {S:@Search B}.
 
     Context `{@Full B TableName}.
     Context `{forall st tn, @Full B (columnName st tn)}.
+    Context `{@Full B ProjName}.
     Context `{forall tn, @Full B (TableAlias query0 tn)}.
     Context `{forall tn, @Full B (TableAlias query1 tn)}.
 
     Context `{eqDec TableName}.
+    Context `{eqDec ProjName}.
     Context `{forall st tn, eqDec (columnName st tn)}.
     Context `{forall tn, eqDec (TableAlias query0 tn)}.
     Context `{forall tn, eqDec (TableAlias query1 tn)}.
@@ -357,10 +345,10 @@ Module ConjuctiveQueryData (T : Types) (S : Schemas T) (R : Relations T S).
       refine (_).
     Defined.
 
-    Definition AccessQ0 st := Access SQLType TableName columnName (TableAlias query0) st.
-    Definition AccessQ1 st := Access SQLType TableName columnName (TableAlias query1) st.
+    Definition AccessQ0 := Access query0.
+    Definition AccessQ1 := Access query1.
 
-    Instance eqDecAccess st : eqDec (AccessQ1 st).
+    Instance eqDecAccessQ1 st : eqDec (AccessQ1 st).
       unfold Access.
       refine (_).
     Defined.
@@ -404,10 +392,9 @@ http://www.sciencedirect.com/science/article/pii/S0022000000917136
       - (* check selection variables are equal *)
         refine (forallb _  (selections query1)).
         intros ac.
-        refine (assignmentAccess a (fst ac.2) =? assignmentAccess a (snd ac.2)).
+        refine (assignmentAccess a (fst ac.2) =? 
+                assignmentAccess a (snd ac.2)).
       - (* check projection variables are equal *)
-        refine (forallb _  projectionTypes).
-        intros T.
         exact Datatypes.true. (* TODO wrong *)
     Defined.
     
@@ -421,8 +408,8 @@ http://www.sciencedirect.com/science/article/pii/S0022000000917136
           List.In ac (selections query1) -> 
             assignmentAccess a (fst ac.2) = assignmentAccess a (snd ac.2))
         /\
-        (forall i:index projectionTypes, 
-            assignmentAccess a (projection query1 i) = projection query0 i)
+        (forall (pn:ProjName), 
+            assignmentAccess a (projection query1 pn) = projection query0 pn)
       }.
       destruct containment as [a|] eqn:h; [|exact None].
       refine (Some (exist _ a _)).
@@ -487,20 +474,12 @@ http://www.sciencedirect.com/science/article/pii/S0022000000917136
         apply from.
       - (* projection variables are correct *)
         rewrite <- project; clear select project.
-        unfold fromSchema in *.
+        extensionality pn.
+        specialize (h' pn).
+        unfold assignmentAccess in h'.
+        rewrite <- h'.
         simpl.
-(*        Arguments denoteProjection {_ _ _} _ {_ _ _ _} _. *)
-
-        unfold Assignment in a.
-        clear h h'.
-        induction projectionTypes as [|st sts rec].
-        + simpl.
-          reflexivity.
-        + simpl.
-          f_equal.
-          * clear rec.
-            admit.
-          * admit.
-    Admitted.
+        reflexivity.
+    Qed.
   End Correctness.
 End ConjuctiveQueryData.

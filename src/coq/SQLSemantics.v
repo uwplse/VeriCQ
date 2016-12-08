@@ -90,6 +90,7 @@ Module SQL (T : Types) (S : Schemas T) (R : Relations T S).
   | combine  {Γ Γ0 Γ1} : Proj Γ Γ0 -> Proj Γ Γ1 -> Proj Γ (Γ0 ++ Γ1)
   | left  {Γ0 Γ1} : Proj (Γ0 ++ Γ1) Γ0
   | right  {Γ0 Γ1} : Proj (Γ0 ++ Γ1) Γ1
+  | named {N Γ s} : (forall n, Proj Γ (s n)) -> Proj Γ (namedNode N s)
   | name {N s} n : Proj (namedNode N s) (s n)
   | compose  {Γ Γ' Γ''} : Proj Γ Γ' -> Proj Γ' Γ'' -> Proj Γ Γ''
   | erase    {Γ} : Proj Γ empty
@@ -124,6 +125,7 @@ Module SQL (T : Types) (S : Schemas T) (R : Relations T S).
       | combine c c' => fun t => (denoteProj _ _ c t, denoteProj _ _ c' t)
       | left => fst
       | right => snd
+      | named p => fun t n => denoteProj _ _ (p n) t
       | name n => fun t => t n
       | compose c c' => fun t => denoteProj _ _ c' (denoteProj _ _ c t)
       | erase => fun _ => tt
@@ -168,15 +170,4 @@ Module SQL (T : Types) (S : Schemas T) (R : Relations T S).
   Notation "s0 'AND' s1" := (and s0 s1) (at level 45).
   Notation "'TRUE'" := (true) (at level 45).
   Notation "'FALSE'" := (false) (at level 45).
-
-  Fixpoint tupleEqual {Γ s} : Proj Γ s -> Proj Γ s -> Pred Γ :=
-    match s with
-    | s0 ++ s1 => fun p0 p1 =>
-        tupleEqual (p0 ⋅ left)  (p1 ⋅ left) AND
-        tupleEqual (p0 ⋅ right) (p1 ⋅ right)
-    | leaf T => fun p0 p1 => 
-        equal (variable p0) (variable p1)
-    | empty => fun _ _ => TRUE
-    | namedNode N s => fun _ _ => FALSE    (* TODO this is wrong *)
-    end.
 End SQL.
