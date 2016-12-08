@@ -15,6 +15,8 @@ Require EnsemblesEx.
 Require Import Bool.
 Require Import Native.
 Require Import EqDec.
+Require Import ProofIrrelevance.
+Import EqNotations.
 
 Set Implicit Arguments.
 Open Scope type.
@@ -324,36 +326,81 @@ Module ConjuctiveQueryData (T : Types) (S : Schemas T) (R : Relations T S).
     Context {BA:Basic}.
     Context {SE:@Search BA}.
 
-    Axiom ADMIT : forall {A}, A.
-
-    Instance fullInForall {A B} `{forall a:A, @Full BA (B a)}
+    Instance fullInForall {A B} `{eqDec A}
+                                `{forall a:A, @Full BA (B a)}
                                  (l:list A) :
-                                 Full (forall a:{a | In a l}, B (` a)).
-      idtac.
+                                 Full (forall a, In a l -> B a).
       induction l as [|a l rec].
-      - admit.
-      - 
+      - simple refine {| full := single _ |}.
+        + intros _ [].
+        + rewrite denoteSingleOk.
+          rewrite fullIsTrue.
+          apply Extensionality_Ensembles'.
+          intros f.
+          rewrite singletonIsEqual.
+          intuition.
+          simpl.
+          extensionality a.
+          extensionality h.
+          destruct h.
+      - simple refine {| full := _ |}.
+        + refine (all (fun b:B a => _)).
+          refine (all (fun f:(forall a, In a l -> B a) => _)).
+          refine (single _).
+          intros a' inl.
+          simpl in inl.
+          refine (match a =? a' with Specif.left e => _ | Specif.right e => _ end).
+          * refine (rew e in b).
+          * refine (f a' _).
+            clear -inl e.
+            abstract (destruct inl; congruence).
+        + rewrite fullIsTrue.
+          apply Extensionality_Ensembles'.
+          intros f.
+          intuition.
+          rewrite denoteAllOk.
+          simple refine (ex_intro _ _ _). {
+            refine (f a _).
+            left.
+            reflexivity.
+          }
+          simpl.
+          specialize @denoteAllOk; unfold Ensemble; intro h; rewrite h; clear h.
+          simple refine (ex_intro _ _ _). {
+            intros a' inl.
+            refine (f a' _).
+            simpl.
+            intuition.
+          }
+          simpl.
+          specialize @denoteSingleOk; unfold Ensemble; intro h; rewrite h; clear h.
+          rewrite singletonIsEqual.
+          extensionality a'.
+          extensionality inl.
+          break_match.
+          * destruct e.
+            simpl.
+            f_equal.
+            apply proof_irrelevance.
+          * f_equal.
+            apply proof_irrelevance.
+    Defined.
 
-
-
-    Admitted.
-
-
-
-    Instance fullForall {A B} `{@Full listSpace A}
+    Instance fullForall {A B} `{eqDec A}
+                              `{@Full listSpace A}
                               `{forall a:A, @Full BA (B a)} : 
                                Full (forall a : A, B a).
       specialize (fullInForall (@full listSpace A _)); intros h.
       simple refine {| full := _ |}.
       - refine (all (fun f => single (fun a => _))).
-        exact (f (exist _ a (inFull a))).
+        exact (f a (inFull a)).
       - rewrite fullIsTrue.
         apply Extensionality_Ensembles'.
         intros f.
         intuition.
         rewrite denoteAllOk.
         simple refine (ex_intro _ _ _). {
-          intros a.
+          intros a _.
           apply f.
         }
         simpl.
@@ -362,52 +409,6 @@ Module ConjuctiveQueryData (T : Types) (S : Schemas T) (R : Relations T S).
         rewrite h'; clear h'.
         constructor.
     Defined.
-
-
-
-        rewrite singl
-        specialize (h' (fun a => f a)).
-        simpl in h'.
-        rewrite h'.
-        rewrite h' in h; clear h'.
-        destruct h; rename a' into a.
-        rename Heqb into h.
-          denoteSingleOk.
-
-
-
-        refine (let f' :=  (forall a : {a : A | In a (full A)}, B (` a))
-
-
-        
-        extensionality a.
-
-        intuition.
-        
-        
-        
-
-      - induction (full A) as [|a l rec].
-        + exact empty.
-        + refine (bind a' 
-
-      
-
-
-      - specialize inFull.
-
-
-
-      induction (full A) as [|a l rec].
-      - intros h.
-        refine {| full := empty |}.
-        apply ADMIT.
-      - intros h.
-        cbn in h.
-
-
-
-    Admitted.
 
     Context `{@Full listSpace (TableName r)}.
     Context `{forall st tn, @Full BA (columnName r st tn)}.
@@ -465,7 +466,7 @@ Module ConjuctiveQueryData (T : Types) (S : Schemas T) (R : Relations T S).
                 projection (query0 r) pn).
     Defined.
 
-    Definition specContainment : option {a |
+    Definition containmentSpec : option {a |
         (forall ac : {st : SQLType r & (AccessQ1 st * AccessQ1 st)}, 
           List.In ac (selections (query1 r)) -> 
             assignmentAccess a (fst ac.2) = assignmentAccess a (snd ac.2))
@@ -473,8 +474,8 @@ Module ConjuctiveQueryData (T : Types) (S : Schemas T) (R : Relations T S).
         (forall (pn:ProjName r), 
             assignmentAccess a (projection (query1 r) pn) = projection (query0 r) pn)
       }.
-      destruct containment as [a|] eqn:h; [|exact None].
-      refine (Some (exist _ a _)).
+      destruct containment as [a|] eqn:h; [apply Some|exact None].
+      refine (exist _ a _).
       unfold containment in *.
       apply searchSolution in h.
       rewrite denoteAllOk in h.
@@ -506,9 +507,8 @@ Module ConjuctiveQueryData (T : Types) (S : Schemas T) (R : Relations T S).
         break_match; intuition.
     Defined.
 
-    Definition soundContainment : option (denoteConjunctiveQueryRewriteContainment r).
-      destruct specContainment as [[a [h h']]|]; [|exact None].
-      refine (Some _).
+    Definition containmentSound : option (denoteConjunctiveQueryRewriteContainment r).
+      destruct containmentSpec as [[a [h h']]|]; [apply Some|exact None].
       unfold denoteConjunctiveQueryRewriteContainment.
       simpl.
       intros Γ s T c q g t [t0 [[select from] project]].
