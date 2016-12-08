@@ -9,19 +9,40 @@ Axiom prop_ext : prop_extensionality.
 Require Import Basic.
 Require Import Full.
 Require Import Precise.
+Require Import JamesTactics.
+Require Import CpdtTactics.
+Require EnsemblesEx.
+Require Import Bool.
+Require Import Native.
+Require Import EqDec.
 
+Set Implicit Arguments.
 Open Scope type.
 
 Notation "( x ; y )" := (existT _ x y).
 Notation "x .1" := (projT1 x) (at level 3, format "x '.1'").
 Notation "x .2" := (projT2 x) (at level 3, format "x '.2'").
 
+(* potential related work
+http://webdam.inria.fr/Alice/pdfs/Chapter-4.pdf (recommended by Shumo)
+http://www.sciencedirect.com/science/article/pii/S0022000000917136
+
+NOTE, in the definition of ConjunctiveQuery, we originally had:
+`TableAlias : Type` and `from : TableAlias -> TableName`
+instead of 
+`TableAlias : TableName -> Type`
+this was less convenient to work with, 
+because enumerating all Aliases to the same table was harder.
+
+we originally had a list of projection types, but then
+the projection had to depend on the types in that list,
+which was hard to induct over. The named approach is much easier now.
+*)
+
 Module ConjuctiveQueryData (T : Types) (S : Schemas T) (R : Relations T S).
   Import T S R.
   Module SQL_TSR := SQL T S R.
   Import SQL_TSR.
-
-  Arguments namedProduct {_ _ _} _.
 
   Section ConjunctiveQuery.
     Variable SQLType : Type.
@@ -31,17 +52,6 @@ Module ConjuctiveQueryData (T : Types) (S : Schemas T) (R : Relations T S).
     Variable projType : ProjName -> SQLType.
 
     Record ConjunctiveQuery := {
-      (* NOTE we originally had:
-      `TableAlias : Type` and `from : TableAlias -> TableName`
-      instead of 
-      `TableAlias : TableName -> Type`
-      this was less convenient to work with, 
-      because enumerating all Aliases to the same table was harder.
-
-      we originally had a list of projection types, but then
-      the projection had to depend on the types in that list,
-      which was hard to induct over. The named approach is much easier now.
-      *)
       TableAlias : TableName -> Type;
       Access (st:SQLType) := {tn : TableName & (TableAlias tn * columnName st tn)};
       selections : list {st:SQLType & (Access st * Access st)};
@@ -65,7 +75,7 @@ Module ConjuctiveQueryData (T : Types) (S : Schemas T) (R : Relations T S).
       refine (right ⋅ _).
       refine (name (a.1) ⋅ _).
       refine (name (fst a.2) ⋅ _).
-      refine (c _ _ (snd a.2)).
+      refine (c (snd a.2)).
     Defined.
  
     Definition denoteFrom : SQL Γ fromSchema.
@@ -89,9 +99,7 @@ Module ConjuctiveQueryData (T : Types) (S : Schemas T) (R : Relations T S).
        named (fun pn => access (projection cq pn)).
 
     Definition denoteConjunctiveQuery : SQL Γ projSchema :=
-      SELECT1 denoteProjection 
-      FROM1 denoteFrom 
-      WHERE denoteSelection.
+      SELECT1 denoteProjection FROM1 denoteFrom WHERE denoteSelection.
   End ConjunctiveQuery.
  
   Record ConjunctiveQueryRewrite := conjunctiveQueryRewrite {
@@ -100,8 +108,8 @@ Module ConjuctiveQueryData (T : Types) (S : Schemas T) (R : Relations T S).
     columnName : SQLType -> TableName -> Type;
     ProjName : Type;
     projType : ProjName -> SQLType;
-    query0 : ConjunctiveQuery SQLType TableName columnName ProjName projType; 
-    query1 : ConjunctiveQuery SQLType TableName columnName ProjName projType
+    query0 : ConjunctiveQuery columnName projType; 
+    query1 : ConjunctiveQuery columnName projType
   }.
 
   Definition denoteConjunctiveQueryRewriteContainment (r:ConjunctiveQueryRewrite) : Type.
@@ -110,9 +118,9 @@ Module ConjuctiveQueryData (T : Types) (S : Schemas T) (R : Relations T S).
     refine (forall (T:SQLType r -> type), _).
     refine (forall (c:forall (st:SQLType r) (tn:TableName r) (cn:columnName r st tn), Column (T st) (s tn)), _).
     refine (forall (q:(forall (tn:TableName r), SQL Γ (s tn))), _).
-    refine (forall (g:Tuple Γ) (t:Tuple (projSchema _ _ (projType r) T)), (⟦ Γ ⊢ _ : _ ⟧ g t : Prop) -> ⟦ Γ ⊢ _ : _ ⟧ g t : Prop).
-    - refine (denoteConjunctiveQuery _ _ _ _ _ Γ s T c q (query0 r)).
-    - refine (denoteConjunctiveQuery _ _ _ _ _ Γ s T c q (query1 r)).
+    refine (forall (g:Tuple Γ) (t:Tuple (projSchema (projType r) T)), (⟦ Γ ⊢ _ : _ ⟧ g t : Prop) -> ⟦ Γ ⊢ _ : _ ⟧ g t : Prop).
+    - refine (denoteConjunctiveQuery s T c q (query0 r)).
+    - refine (denoteConjunctiveQuery s T c q (query1 r)).
   Defined. 
 
   Definition denoteConjunctiveQueryRewriteEquivalence (r:ConjunctiveQueryRewrite) : Type.
@@ -122,8 +130,8 @@ Module ConjuctiveQueryData (T : Types) (S : Schemas T) (R : Relations T S).
     refine (forall (c:forall (st:SQLType r) (tn:TableName r) (cn:columnName r st tn), Column (T st) (s tn)), _).
     refine (forall (q:(forall (tn:TableName r), SQL Γ (s tn))), _).
     refine (⟦ Γ ⊢ _ : _ ⟧ = ⟦ Γ ⊢ _ : _ ⟧).
-    - refine (denoteConjunctiveQuery _ _ _ _ _ Γ s T c q (query0 r)).
-    - refine (denoteConjunctiveQuery _ _ _ _ _ Γ s T c q (query1 r)).
+    - refine (denoteConjunctiveQuery s T c q (query0 r)).
+    - refine (denoteConjunctiveQuery s T c q (query1 r)).
   Defined. 
 
   Module SelfJoin.
@@ -299,27 +307,9 @@ Module ConjuctiveQueryData (T : Types) (S : Schemas T) (R : Relations T S).
 
   Arguments full [_] _ [_].
 
-  Arguments TableAlias {_ _ _ _ _} _ _.
-  Arguments selections {_ _ _ _ _} _.
-  Arguments projection {_ _ _ _ _} _ _.
-  Arguments Access {_ _ _ _ _} _ _.
-
-  Require Import EqDec.
-
-  (* `query0 r <= query1 r`
-      every tuple of `query0 r` is contained in `query1 r` *)
   Section Correctness.
-    Variable SQLType : Type.
-    Variable TableName : Type.
-    Variable columnName : SQLType -> TableName -> Type.
-    Variable ProjName : Type.
-    Variable projType : ProjName -> SQLType.
-    Variable query0 : ConjunctiveQuery SQLType TableName columnName ProjName projType.
-    Variable query1 : ConjunctiveQuery SQLType TableName columnName ProjName projType.
-    Definition r := conjunctiveQueryRewrite SQLType TableName columnName ProjName projType query0 query1.
-  
-    Require Import Native.
- 
+    Variable r : ConjunctiveQueryRewrite.
+
     Context {BA:Basic}.
     Context {SE:@Search BA}.
 
@@ -328,40 +318,32 @@ Module ConjuctiveQueryData (T : Types) (S : Schemas T) (R : Relations T S).
                                Full (forall a : A, B a).
     Admitted.
 
-    Context `{@Full listSpace TableName}.
-    Context `{forall st tn, @Full BA (columnName st tn)}.
-    Context `{@Full listSpace ProjName}.
-    Context `{forall tn, @Full BA (TableAlias query0 tn)}.
-    Context `{forall tn, @Full listSpace (TableAlias query1 tn)}.
+    Context `{@Full listSpace (TableName r)}.
+    Context `{forall st tn, @Full BA (columnName r st tn)}.
+    Context `{@Full listSpace (ProjName r)}.
+    Context `{forall tn, @Full BA (TableAlias (query0 r) tn)}.
+    Context `{forall tn, @Full listSpace (TableAlias (query1 r) tn)}.
 
-    Context `{eqDec TableName}.
-    Context `{eqDec ProjName}.
-    Context `{forall st tn, eqDec (columnName st tn)}.
-    Context `{forall tn, eqDec (TableAlias query0 tn)}.
-    Context `{forall tn, eqDec (TableAlias query1 tn)}.
+    Context `{eqDec (TableName r)}.
+    Context `{eqDec (ProjName r)}.
+    Context `{forall st tn, eqDec (columnName r st tn)}.
+    Context `{forall tn, eqDec (TableAlias (query0 r) tn)}.
+    Context `{forall tn, eqDec (TableAlias (query1 r) tn)}.
 
-    Definition Assignment := (forall tn:TableName, TableAlias query1 tn -> TableAlias query0 tn).
+    Definition Assignment := (forall tn:(TableName r), TableAlias (query1 r) tn -> TableAlias (query0 r) tn).
    
     Instance fullAssignment : @Full BA Assignment.
       unfold Assignment. 
       refine (_).
     Defined.
 
-    Definition AccessQ0 := Access query0.
-    Definition AccessQ1 := Access query1.
+    Definition AccessQ0 := Access (query0 r).
+    Definition AccessQ1 := Access (query1 r).
 
     Instance eqDecAccessQ1 st : eqDec (AccessQ1 st).
       unfold Access.
       refine (_).
     Defined.
-
-(* potential related work
-http://webdam.inria.fr/Alice/pdfs/Chapter-4.pdf (recommended by Shumo)
-http://www.sciencedirect.com/science/article/pii/S0022000000917136
-
-*)
-
-    Require Import Bool.
 
     Coercion sumBoolToBool {P Q} (pq:{P} + {Q}) : bool :=
       if pq then Datatypes.true else Datatypes.false.
@@ -381,28 +363,24 @@ http://www.sciencedirect.com/science/article/pii/S0022000000917136
       refine (if (_:bool) then single a else empty).
       refine (_ && _).
       - (* check selection variables are equal *)
-        refine (forallb _  (selections query1)).
+        refine (forallb _  (selections (query1 r))).
         intros ac.
         refine (assignmentAccess a (fst ac.2) =? 
                 assignmentAccess a (snd ac.2)).
       - (* check projection variables are equal *)
-        refine (forallb _  (full ProjName)).
+        refine (forallb _  (full (ProjName r))).
         intros pn.
-        refine (assignmentAccess a (projection query1 pn) =? 
-                projection query0 pn).
+        refine (assignmentAccess a (projection (query1 r) pn) =? 
+                projection (query0 r) pn).
     Defined.
-    
-    Require Import JamesTactics.
-    Require Import CpdtTactics.
-    Require EnsemblesEx.
 
-    Definition containment' : option {a |
-        (forall ac : {st : SQLType & (AccessQ1 st * AccessQ1 st)}, 
-          List.In ac (selections query1) -> 
+    Definition specContainment : option {a |
+        (forall ac : {st : SQLType r & (AccessQ1 st * AccessQ1 st)}, 
+          List.In ac (selections (query1 r)) -> 
             assignmentAccess a (fst ac.2) = assignmentAccess a (snd ac.2))
         /\
-        (forall (pn:ProjName), 
-            assignmentAccess a (projection query1 pn) = projection query0 pn)
+        (forall (pn:ProjName r), 
+            assignmentAccess a (projection (query1 r) pn) = projection (query0 r) pn)
       }.
       destruct containment as [a|] eqn:h; [|exact None].
       refine (Some (exist _ a _)).
@@ -432,7 +410,7 @@ http://www.sciencedirect.com/science/article/pii/S0022000000917136
       - destruct h as [_ h].
         rewrite forallb_forall in h.
         intros pn.
-        specialize (@denoteFullOk listSpace ProjName _); intros inFull.
+        specialize (@denoteFullOk listSpace (ProjName r) _); intros inFull.
         cbn in inFull.
         apply equal_f with (x:=pn) in inFull.
         rewrite fullIsTrue in inFull.
@@ -443,7 +421,7 @@ http://www.sciencedirect.com/science/article/pii/S0022000000917136
     Defined.
 
     Definition soundContainment : option (denoteConjunctiveQueryRewriteContainment r).
-      destruct containment' as [[a [h h']]|]; [|exact None].
+      destruct specContainment as [[a [h h']]|]; [|exact None].
       refine (Some _).
       unfold denoteConjunctiveQueryRewriteContainment.
       simpl.
@@ -453,7 +431,7 @@ http://www.sciencedirect.com/science/article/pii/S0022000000917136
       - (* selection variables are correct *)
         clear h'.
         unfold denoteSelection.
-        induction (selections query1) as [|sel sels rec].
+        induction (selections (query1 r)) as [|sel sels rec].
         + simpl.
           trivial.
         + simpl.
