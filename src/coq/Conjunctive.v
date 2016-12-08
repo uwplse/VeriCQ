@@ -297,11 +297,6 @@ Module ConjuctiveQueryData (T : Types) (S : Schemas T) (R : Relations T S).
     Qed.
   End TransitiveJoin.
 
-  Instance fullForall {A B} `{Full A}
-                            `{forall a:A, Full (B a)} : 
-                             Full (forall a : A, B a).
-  Admitted.
-
   Arguments full [_] _ [_].
 
   Arguments TableAlias {_ _ _ _ _} _ _.
@@ -322,15 +317,22 @@ Module ConjuctiveQueryData (T : Types) (S : Schemas T) (R : Relations T S).
     Variable query0 : ConjunctiveQuery SQLType TableName columnName ProjName projType.
     Variable query1 : ConjunctiveQuery SQLType TableName columnName ProjName projType.
     Definition r := conjunctiveQueryRewrite SQLType TableName columnName ProjName projType query0 query1.
-   
-    Context {B:Basic}.
-    Context {S:@Search B}.
+  
+    Require Import Native.
+ 
+    Context {BA:Basic}.
+    Context {SE:@Search BA}.
 
-    Context `{@Full B TableName}.
-    Context `{forall st tn, @Full B (columnName st tn)}.
-    Context `{@Full B ProjName}.
-    Context `{forall tn, @Full B (TableAlias query0 tn)}.
-    Context `{forall tn, @Full B (TableAlias query1 tn)}.
+    Instance fullForall {A B} `{@Full listSpace A}
+                              `{forall a:A, @Full BA (B a)} : 
+                               Full (forall a : A, B a).
+    Admitted.
+
+    Context `{@Full listSpace TableName}.
+    Context `{forall st tn, @Full BA (columnName st tn)}.
+    Context `{@Full listSpace ProjName}.
+    Context `{forall tn, @Full BA (TableAlias query0 tn)}.
+    Context `{forall tn, @Full listSpace (TableAlias query1 tn)}.
 
     Context `{eqDec TableName}.
     Context `{eqDec ProjName}.
@@ -340,7 +342,7 @@ Module ConjuctiveQueryData (T : Types) (S : Schemas T) (R : Relations T S).
 
     Definition Assignment := (forall tn:TableName, TableAlias query1 tn -> TableAlias query0 tn).
    
-    Instance fullAssignment : @Full B Assignment.
+    Instance fullAssignment : @Full BA Assignment.
       unfold Assignment. 
       refine (_).
     Defined.
@@ -352,17 +354,6 @@ Module ConjuctiveQueryData (T : Types) (S : Schemas T) (R : Relations T S).
       unfold Access.
       refine (_).
     Defined.
-(*
-    Variable TableName : Type.
-    Variable columnName : type -> TableName -> Type.
-    Variable projectionTypes : list type.
-
-    Definition Access (TableAlias : TableName -> Type) (t:type) := {tn : TableName & (TableAlias tn * columnName t tn)}.
-
-*)
-(*
-    Check (Access (TableName r) (columnName r) (TableAlias (query0 r))). *)
-    Print Access.
 
 (* potential related work
 http://webdam.inria.fr/Alice/pdfs/Chapter-4.pdf (recommended by Shumo)
@@ -395,13 +386,15 @@ http://www.sciencedirect.com/science/article/pii/S0022000000917136
         refine (assignmentAccess a (fst ac.2) =? 
                 assignmentAccess a (snd ac.2)).
       - (* check projection variables are equal *)
-        exact Datatypes.true. (* TODO wrong *)
+        refine (forallb _  (full ProjName)).
+        intros pn.
+        refine (assignmentAccess a (projection query1 pn) =? 
+                projection query0 pn).
     Defined.
     
     Require Import JamesTactics.
     Require Import CpdtTactics.
-
-    Check projection.
+    Require EnsemblesEx.
 
     Definition containment' : option {a |
         (forall ac : {st : SQLType & (AccessQ1 st * AccessQ1 st)}, 
@@ -418,12 +411,12 @@ http://www.sciencedirect.com/science/article/pii/S0022000000917136
       rewrite denoteAllOk in h.
       destruct h as [a' h].
       break_match; revgoals. {
-        specialize (@denoteEmptyOk B Assignment); intros h'.
+        specialize (@denoteEmptyOk BA Assignment); intros h'.
         unfold Ensemble in h'.
         rewrite h' in h; clear h'.
         destruct h.
       }
-      specialize (@denoteSingleOk B Assignment); intros h'.
+      specialize (@denoteSingleOk BA Assignment); intros h'.
       unfold Ensemble in h'.
       rewrite h' in h; clear h'.
       destruct h; rename a' into a.
@@ -437,9 +430,17 @@ http://www.sciencedirect.com/science/article/pii/S0022000000917136
         unfold sumBoolToBool in h.
         break_match; intuition.
       - destruct h as [_ h].
-        intros i.
-        admit.
-    Admitted.
+        rewrite forallb_forall in h.
+        intros pn.
+        specialize (@denoteFullOk listSpace ProjName _); intros inFull.
+        cbn in inFull.
+        apply equal_f with (x:=pn) in inFull.
+        rewrite fullIsTrue in inFull.
+        specialize (h pn).
+        rewrite inFull in h.
+        unfold sumBoolToBool in h.
+        break_match; intuition.
+    Defined.
 
     Definition soundContainment : option (denoteConjunctiveQueryRewriteContainment r).
       destruct containment' as [[a [h h']]|]; [|exact None].
