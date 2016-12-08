@@ -307,15 +307,106 @@ Module ConjuctiveQueryData (T : Types) (S : Schemas T) (R : Relations T S).
 
   Arguments full [_] _ [_].
 
+  Lemma inFull {A} `{@Full listSpace A} (a:A) : In a (full A).
+    simpl.
+    specialize (@denoteFullOk listSpace A _).
+    rewrite fullIsTrue.
+    simpl.
+    intros h.
+    apply equal_f with (x:=a) in h.
+    rewrite h.
+    trivial.
+  Qed.
+
   Section Correctness.
     Variable r : ConjunctiveQueryRewrite.
 
     Context {BA:Basic}.
     Context {SE:@Search BA}.
 
+    Axiom ADMIT : forall {A}, A.
+
+    Instance fullInForall {A B} `{forall a:A, @Full BA (B a)}
+                                 (l:list A) :
+                                 Full (forall a:{a | In a l}, B (` a)).
+      idtac.
+      induction l as [|a l rec].
+      - admit.
+      - 
+
+
+
+    Admitted.
+
+
+
     Instance fullForall {A B} `{@Full listSpace A}
                               `{forall a:A, @Full BA (B a)} : 
                                Full (forall a : A, B a).
+      specialize (fullInForall (@full listSpace A _)); intros h.
+      simple refine {| full := _ |}.
+      - refine (all (fun f => single (fun a => _))).
+        exact (f (exist _ a (inFull a))).
+      - rewrite fullIsTrue.
+        apply Extensionality_Ensembles'.
+        intros f.
+        intuition.
+        rewrite denoteAllOk.
+        simple refine (ex_intro _ _ _). {
+          intros a.
+          apply f.
+        }
+        simpl.
+        specialize (@denoteSingleOk BA (forall a:A, B a)); intros h'.
+        unfold Ensemble in h'.
+        rewrite h'; clear h'.
+        constructor.
+    Defined.
+
+
+
+        rewrite singl
+        specialize (h' (fun a => f a)).
+        simpl in h'.
+        rewrite h'.
+        rewrite h' in h; clear h'.
+        destruct h; rename a' into a.
+        rename Heqb into h.
+          denoteSingleOk.
+
+
+
+        refine (let f' :=  (forall a : {a : A | In a (full A)}, B (` a))
+
+
+        
+        extensionality a.
+
+        intuition.
+        
+        
+        
+
+      - induction (full A) as [|a l rec].
+        + exact empty.
+        + refine (bind a' 
+
+      
+
+
+      - specialize inFull.
+
+
+
+      induction (full A) as [|a l rec].
+      - intros h.
+        refine {| full := empty |}.
+        apply ADMIT.
+      - intros h.
+        cbn in h.
+
+
+
     Admitted.
 
     Context `{@Full listSpace (TableName r)}.
@@ -410,12 +501,7 @@ Module ConjuctiveQueryData (T : Types) (S : Schemas T) (R : Relations T S).
       - destruct h as [_ h].
         rewrite forallb_forall in h.
         intros pn.
-        specialize (@denoteFullOk listSpace (ProjName r) _); intros inFull.
-        cbn in inFull.
-        apply equal_f with (x:=pn) in inFull.
-        rewrite fullIsTrue in inFull.
-        specialize (h pn).
-        rewrite inFull in h.
+        specialize (h pn (inFull pn)).
         unfold sumBoolToBool in h.
         break_match; intuition.
     Defined.
