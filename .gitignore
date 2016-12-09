@@ -8,3 +8,8 @@ src/**/*.v.d
 src/**/*.vo
 src/**/*.aux
 src/**/compiled
+src/racket/extraction.rkt
+src/racket/parallel.rkt
+src/racket/primitives.rkt
+src/racket/rosette.rkt
+src/racket/vericq.rkt
