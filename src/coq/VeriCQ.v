@@ -6,8 +6,8 @@ Require Import TransitiveJoin.
 Set Implicit Arguments.
 
 Definition vericq := (
-  containmentSound (S:=rosetteSearch) (r:=selfJoin),
-  containmentSound (S:=rosetteSearch) (r:=transitiveJoin)
+  equivalenceVerifier (S:=rosetteSearch) (r:=selfJoin),
+  equivalenceVerifier (S:=rosetteSearch) (r:=transitiveJoin)
 ).
    
 Extraction Language Scheme.

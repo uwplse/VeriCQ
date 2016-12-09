@@ -24,7 +24,11 @@ Open Scope type.
 Notation "( x ; y )" := (existT _ x y).
 Notation "x .1" := (projT1 x) (at level 3, format "x '.1'").
 Notation "x .2" := (projT2 x) (at level 3, format "x '.2'").
-
+  
+Inductive Maybe (P : Prop) : Set :=
+| unknown : Maybe P
+| holds : P -> Maybe P.
+  
 Coercion sumBoolToBool {P Q} (pq:{P} + {Q}) : bool :=
   if pq then Datatypes.true else Datatypes.false.
 
@@ -180,7 +184,7 @@ Class CQRewrite := {
 Section Checks.
   Context `{S:Search}.
 
-  Section Conjunctive.
+  Section Containment.
     Context `{r:CQRewrite}.
   
     Definition Assignment := (forall tn:TableName, TableAlias (CQ:=query1) tn -> TableAlias (CQ:=query0) tn).
@@ -210,18 +214,18 @@ Section Checks.
         refine (assignmentAccess a (projection (CQ:=query1) pn) =? 
                 projection (CQ:=query0) pn).
     Defined.
-  End Conjunctive.
+  End Containment.
 
-  Section Equality.
+  Section Equivalence.
     Context `{r:CQRewrite}.
 
-    Definition equalityCheck :=
+    Definition equivalenceCheck :=
       let r' : CQRewrite := {| query0 := query1; query1 := query0 |} in 
       match containmentCheck (r:=r), containmentCheck (r:=r') with
       | Some a, Some a' => Some (a, a')
       | _,_ => None
       end.
-  End Equality.
+  End Equivalence.
 End Checks.
 
 (* it's really ugly that I have to use Parameters, but I don't 
@@ -307,23 +311,23 @@ End DenoteCQ.
 Section CQRewrite.
   Context `{r:CQRewrite}.
   
-  Definition denoteCQRewriteContainment : Type.
-    refine (forall (Γ:Schema), _).
-    refine (forall (s:TableName -> Schema), _).
-    refine (forall (T:SQLType -> type), _).
-    refine (forall (c:forall (st:SQLType) (tn:TableName) (cn:columnName st tn), Column (T st) (s tn)), _).
-    refine (forall (q:(forall (tn:TableName), SQL Γ (s tn))), _).
+  Definition denoteCQRewriteContainment : Prop.
+    refine (forall (Γ:Schema), _ : Prop).
+    refine (forall (s:TableName -> Schema), _ : Prop).
+    refine (forall (T:SQLType -> type), _ : Prop).
+    refine (forall (c:forall (st:SQLType) (tn:TableName) (cn:columnName st tn), Column (T st) (s tn)), _ : Prop).
+    refine (forall (q:(forall (tn:TableName), SQL Γ (s tn))), _ : Prop).
     refine (forall (g:Tuple Γ) (t:Tuple (projSchema projType T)), (⟦ Γ ⊢ _ : _ ⟧ g t : Prop) -> ⟦ Γ ⊢ _ : _ ⟧ g t : Prop).
     - refine (denoteCQ s T c q query0).
     - refine (denoteCQ s T c q query1).
   Defined. 
   
-  Definition denoteCQRewriteEquivalence : Type.
-    refine (forall (Γ:Schema), _).
-    refine (forall (s:TableName -> Schema), _).
-    refine (forall (T:SQLType -> type), _).
-    refine (forall (c:forall (st:SQLType) (tn:TableName) (cn:columnName st tn), Column (T st) (s tn)), _).
-    refine (forall (q:(forall (tn:TableName), SQL Γ (s tn))), _).
+  Definition denoteCQRewriteEquivalence : Prop.
+    refine (forall (Γ:Schema), _ : Prop).
+    refine (forall (s:TableName -> Schema), _ : Prop).
+    refine (forall (T:SQLType -> type), _ : Prop).
+    refine (forall (c:forall (st:SQLType) (tn:TableName) (cn:columnName st tn), Column (T st) (s tn)), _ : Prop).
+    refine (forall (q:(forall (tn:TableName), SQL Γ (s tn))), _ : Prop).
     refine (⟦ Γ ⊢ _ : _ ⟧ = ⟦ Γ ⊢ _ : _ ⟧).
     - refine (denoteCQ s T c q query0).
     - refine (denoteCQ s T c q query1).
@@ -332,89 +336,122 @@ End CQRewrite.
 
 Section Soundness.
   Context `{S:Search}.
-  Context `{r:CQRewrite}.
- 
-  Definition containmentSpec : option {a |
-      (forall ac : {st : SQLType & (Access (CQ:=query1) st * Access (CQ:=query1) st)}, 
-        List.In ac (selections (CQ:=query1)) -> 
-          assignmentAccess a (fst ac.2) = assignmentAccess a (snd ac.2))
-      /\
-      (forall (pn:ProjName), 
-          assignmentAccess a (projection (CQ:=query1) pn) = projection (CQ:=query0) pn)
-    }.
-    destruct containmentCheck as [a|] eqn:h; [apply Some|exact None].
-    refine (exist _ a _).
-    unfold containmentCheck in *.
-    break_match; [|congruence]. 
-    inversion h; subst; clear h; rename Heqr0 into h.
-    apply searchSolution in h.
-    rewrite denoteAllOk in h.
-    destruct h as [a' h].
-    break_match; revgoals. {
-      specialize @denoteEmptyOk; unfold Ensemble; intro h'; rewrite h' in h; clear h'.
-      destruct h.
-    }
-    specialize @denoteSingleOk; unfold Ensemble; intro h'; rewrite h' in h; clear h'.
-    destruct h; rename a' into a.
-    rename Heqb into h.
-    rewrite andb_true_iff in h.
-    constructor.
-    - destruct h as [h _].
-      rewrite forallb_forall in h.
-      intros ac inSel.
-      specialize (h ac inSel).
-      unfold sumBoolToBool in h.
-      break_match; intuition.
-    - destruct h as [_ h].
-      rewrite forallb_forall in h.
-      intros pn.
-      specialize (h pn (inFull pn)).
-      unfold sumBoolToBool in h.
-      break_match; intuition.
-  Defined.
 
-  Definition containmentSound : option denoteCQRewriteContainment.
-    destruct containmentSpec as [[a [h h']]|]; [apply Some|exact None].
-    unfold denoteCQRewriteContainment.
-    simpl.
-    intros Γ s T c q g t [t0 [[select from] project]].
-    simple refine (ex_intro _ _ _). {
-      intros tn ta.
-      refine (t0 tn (a tn ta)).
-    }
-    constructor; [constructor|].
-    - (* selection variables are correct *)
-      clear h'.
-      unfold denoteSelection.
-      induction (selections (CQ:=query1)) as [|sel sels rec].
-      + simpl.
-        trivial.
-      + simpl.
-        constructor.
-        * clear rec.
-          destruct sel as [st [[tn [ta cn]] [tn' [ta' cn']]]].
-          simpl.
-          simpl in h.
-          match goal with
-          | h:forall _, ?a = _ \/ _ -> _ |- _ => specialize (h a (or_introl eq_refl))
-          end.
-          unfold assignmentAccess in h.
-          simpl in h.
-          crush.
-        * apply rec.
-          intuition.
-    - (* from clause is correct *)
-      intros tn ta.
-      apply from.
-    - (* projection variables are correct *)
-      rewrite <- project; clear select project.
-      extensionality pn.
-      specialize (h' pn).
-      unfold assignmentAccess in h'.
-      rewrite <- h'.
+  Section Containment.
+    Context `{r:CQRewrite}.
+  
+    Lemma containmentSpec {a} (h:containmentCheck = Some a) : 
+        (forall ac : {st : SQLType & (Access (CQ:=query1) st * Access (CQ:=query1) st)}, 
+          List.In ac (selections (CQ:=query1)) -> 
+            assignmentAccess a (fst ac.2) = assignmentAccess a (snd ac.2))
+        /\
+        (forall (pn:ProjName), 
+            assignmentAccess a (projection (CQ:=query1) pn) = projection (CQ:=query0) pn).
+      unfold containmentCheck in *.
+      break_match; [|congruence]. 
+      inversion h; subst; clear h; rename Heqr0 into h.
+      apply searchSolution in h.
+      rewrite denoteAllOk in h.
+      destruct h as [a' h].
+      break_match; revgoals. {
+        specialize @denoteEmptyOk; unfold Ensemble; intro h'; rewrite h' in h; clear h'.
+        destruct h.
+      }
+      specialize @denoteSingleOk; unfold Ensemble; intro h'; rewrite h' in h; clear h'.
+      destruct h; rename a' into a.
+      rename Heqb into h.
+      rewrite andb_true_iff in h.
+      constructor.
+      - destruct h as [h _].
+        rewrite forallb_forall in h.
+        intros ac inSel.
+        specialize (h ac inSel).
+        unfold sumBoolToBool in h.
+        break_match; intuition.
+      - destruct h as [_ h].
+        rewrite forallb_forall in h.
+        intros pn.
+        specialize (h pn (inFull pn)).
+        unfold sumBoolToBool in h.
+        break_match; intuition.
+    Qed.
+    
+    Lemma containmentSound {a} (h:containmentCheck = Some a) : denoteCQRewriteContainment.
+      destruct (containmentSpec h) as [h'' h']; clear h; rename h'' into h.
+      unfold denoteCQRewriteContainment.
       simpl.
-      reflexivity.
-  Defined.
+      intros Γ s T c q g t [t0 [[select from] project]].
+      simple refine (ex_intro _ _ _). {
+        intros tn ta.
+        refine (t0 tn (a tn ta)).
+      }
+      constructor; [constructor|].
+      - (* selection variables are correct *)
+        clear h'.
+        unfold denoteSelection.
+        induction (selections (CQ:=query1)) as [|sel sels rec].
+        + simpl.
+          trivial.
+        + simpl.
+          constructor.
+          * clear rec.
+            destruct sel as [st [[tn [ta cn]] [tn' [ta' cn']]]].
+            simpl.
+            simpl in h.
+            match goal with
+            | h:forall _, ?a = _ \/ _ -> _ |- _ => specialize (h a (or_introl eq_refl))
+            end.
+            unfold assignmentAccess in h.
+            simpl in h.
+            crush.
+          * apply rec.
+            intuition.
+      - (* from clause is correct *)
+        intros tn ta.
+        apply from.
+      - (* projection variables are correct *)
+        rewrite <- project; clear select project.
+        extensionality pn.
+        specialize (h' pn).
+        unfold assignmentAccess in h'.
+        rewrite <- h'.
+        simpl.
+        reflexivity.
+    Qed.
+
+    Definition containmentVerifier : Maybe denoteCQRewriteContainment.
+      destruct containmentCheck eqn:h; [apply holds|apply unknown].
+      exact (containmentSound h).
+    Defined.
+  End Containment.
+  
+  Section Equivalence.
+    Context `{r:CQRewrite}.
+
+    Lemma equivalenceSound {a a'} (h:equivalenceCheck = Some (a,a')) : denoteCQRewriteEquivalence.
+      unfold equivalenceCheck in h.
+      break_match; [|congruence].
+      break_match; [|congruence].
+      inversion h; clear h; subst.
+      rename Heqo into h; rename Heqo0 into h'.
+      apply containmentSound in h.
+      apply containmentSound in h'.
+      unfold denoteCQRewriteContainment in h.
+      unfold denoteCQRewriteContainment in h'.
+      unfold denoteCQRewriteEquivalence.
+      intros.
+      extensionality g.
+      apply Extensionality_Ensembles'; intros t.
+      specialize (h Γ s T c q g t).
+      specialize (h' Γ s T c q g t).
+      intuition.
+    Qed.
+      
+    Definition equivalenceVerifier : Maybe denoteCQRewriteEquivalence.
+      destruct equivalenceCheck as [[a a']|] eqn:h; [apply holds|apply unknown].
+      exact (equivalenceSound h).
+    Defined.
+  End Equivalence.
 End Soundness.
 
 Ltac fullInductive :=
