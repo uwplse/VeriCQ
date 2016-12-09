@@ -425,3 +425,11 @@ Section Soundness.
       reflexivity.
   Defined.
 End Soundness.
+
+Ltac fullIndList :=
+  rewrite fullIsTrue;
+  apply Extensionality_Ensembles';
+  intros [];
+  simpl;
+  intuition.
+

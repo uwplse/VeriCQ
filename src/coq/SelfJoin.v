@@ -18,19 +18,34 @@ Require Import EqDec.
 Require Import ProofIrrelevance.
 Import EqNotations.
 Require Import Conjunctive.
+Require Import Datatypes.
 
 Set Implicit Arguments.
 Open Scope type.
 
-Inductive tables := R.
-Inductive columns := a.
-Inductive projs := w.
+(* NOTE, we could define tables as `Inductive tables := R`, but
+unfortunately Coq's extraction is broken for inductive types with just
+one constructor in two ways. Some such types (specifically aliases1)
+it simply cannot extract (it fails with an error message), and others
+it extracts incorrectly, such that __ is sometimes called as a function. 
+Another advantage of using unit is that we can automatically infer the
+full and eqdec instances.
+*)
+Definition tables := unit.
+Definition R := tt.
+Definition columns := unit.
+Definition a := tt.
+Definition projs := unit.
+Definition w := tt.
 Inductive aliases0 := x | y.
-Inductive aliases1 := z | zz.  (* Coq can't extract this inductive types with one constructor *)
-Inductive types := string.
+Definition aliases1 := unit.
+Definition z := tt.
+Definition types := unit.
+Definition string := tt.
 
 Definition selfJoin : CQRewrite.
   refine {|
+    SQLType := types;
     TableName := tables;
     columnName t tn := columns;
     ProjName := projs;
@@ -62,7 +77,6 @@ Goal denoteCQRewriteEquivalence selfJoin.
   - simple refine (ex_intro _ _ _). {
       unfold const.
       intros [] []; apply t0.
-      + exact y.
       + exact y.
     }
     simpl.
@@ -108,47 +122,11 @@ Goal denoteCQRewriteEquivalence selfJoin.
     + reflexivity.
 Qed.
 
-Ltac fullIndList :=
-  rewrite fullIsTrue;
-  apply Extensionality_Ensembles';
-  intros [];
-  simpl;
-  intuition.
-
-Instance fullTables : Full tables.
-  refine {| full := [R] |}; fullIndList.
-Defined.
-
-Instance fullProjs : Full projs.
-  refine {| full := [w] |}; fullIndList.
-Defined.
-
-Instance fullAliases0 : Full aliases0.
+Global Instance fullAliases0 : Full aliases0.
   refine {| full := [x;y] |}; fullIndList.
 Defined.
 
-Instance fullAliases1 : Full aliases1.
-  refine {| full := [z;zz] |}; fullIndList.
-Defined.
-
-Instance eqDecTables : eqDec tables. 
+Global Instance eqDecAliases0 : eqDec aliases0. 
   refine {| eqDecide := _ |}; decide equality.
 Defined.
 
-Instance eqDecAliases0 : eqDec aliases0. 
-  refine {| eqDecide := _ |}; decide equality.
-Defined.
-
-Instance eqDecAliases1 : eqDec aliases1. 
-  refine {| eqDecide := _ |}; decide equality.
-Defined.
-
-Instance eqDecColumns : eqDec columns. 
-  refine {| eqDecide := _ |}; decide equality.
-Defined.
-
-Definition checkSelfJoinContainment :=
-  match containmentCheck selfJoin with 
-  | solution _ => Datatypes.true 
-  | _ => Datatypes.false 
-  end.

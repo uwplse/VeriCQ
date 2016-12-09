@@ -22,14 +22,18 @@ Require Import Conjunctive.
 Set Implicit Arguments.
 Open Scope type.
 
-Inductive tables := R.
+Definition tables := unit.
+Definition R := tt.
 Inductive columns := a | b | c.
-Inductive projs := w.
-Inductive aliases := x.
-Variable string : type.
+Definition projs := unit.
+Definition aliases := unit.
+Definition x := tt.
+Definition types := unit.
+Definition string := tt.
 
 Definition transitiveJoin : CQRewrite.
   refine {|
+    SQLType := types;
     TableName := tables;
     columnName t tn := columns;
     ProjName := projs;
@@ -65,7 +69,7 @@ Goal denoteCQRewriteEquivalence transitiveJoin.
       intros [] []; apply t0.
       + exact x.
     }
-    simpl.
+    simpl; unfold R in *.
     repeat match goal with
     | h:denoteProj _ _ = denoteProj _ _ |- _ => rewrite h in *; clear h
     | h:_ = t |- _ => rewrite <- h; clear h
@@ -86,7 +90,7 @@ Goal denoteCQRewriteEquivalence transitiveJoin.
       intros [] []; apply t0.
       + exact x.
     }
-    simpl.
+    simpl; unfold R in *.
     repeat match goal with
     | h:denoteProj _ _ = denoteProj _ _ |- _ => rewrite h in *; clear h
     | h:_ = t |- _ => rewrite <- h; clear h
@@ -104,3 +108,10 @@ Goal denoteCQRewriteEquivalence transitiveJoin.
     + reflexivity.
 Qed.
 
+Global Instance fullColumns : Full columns.
+  refine {| full := [a;b;c] |}; fullIndList.
+Defined.
+
+Global Instance eqDecColumns : eqDec columns.
+  refine {| eqDecide := _ |}; decide equality.
+Defined.

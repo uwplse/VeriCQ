@@ -10,7 +10,7 @@ src/racket/vericq.rkt: src/coq/*.v src/racket/header.rkt spacesearch
 	                   -R . Main \
 	                   -R ../../lib/SpaceSearch/src/coq SpaceSearch \
 	                   -o Makefile {} +
-	make -j4 -C src/coq
+	make -C src/coq
 	cp src/racket/header.rkt src/racket/vericq.rkt
 	tail -n +4 src/coq/vericq.scm >> src/racket/vericq.rkt
 	sed -i.bak "s/(define __ (lambda (_) __))/(define __ 'underscore)/g" src/racket/vericq.rkt

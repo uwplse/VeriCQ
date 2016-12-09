@@ -7,14 +7,15 @@ Require Import Coq.Logic.Classical_Pred_Type.
 Require Import SQLSemantics.
 Require Import Conjunctive.
 Require Import SelfJoin.
+Require Import TransitiveJoin.
+Require Import Datatypes.
 
 Set Implicit Arguments.
 
-Definition vericq :=
-  match containmentCheck selfJoin with 
-  | solution _ => Datatypes.true 
-  | _ => Datatypes.false 
-  end.
-
+Definition vericq := (
+  containmentSound selfJoin,
+  containmentSound transitiveJoin
+).
+    
 Extraction Language Scheme.
 Extraction "vericq" vericq.
