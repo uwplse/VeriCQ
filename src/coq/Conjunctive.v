@@ -25,6 +25,108 @@ Notation "( x ; y )" := (existT _ x y).
 Notation "x .1" := (projT1 x) (at level 3, format "x '.1'").
 Notation "x .2" := (projT2 x) (at level 3, format "x '.2'").
 
+Coercion sumBoolToBool {P Q} (pq:{P} + {Q}) : bool :=
+  if pq then Datatypes.true else Datatypes.false.
+
+Arguments full [_] _ [_].
+
+Lemma inFull {A} `{@Full listSpace A} (a:A) : In a (full A).
+  simpl.
+  specialize (@denoteFullOk listSpace A _).
+  rewrite fullIsTrue.
+  simpl.
+  intros h.
+  apply equal_f with (x:=a) in h.
+  rewrite h.
+  trivial.
+Qed.
+
+Section FullForall.
+  Context {S:Basic}.
+  Variable A : Type.
+  Variable B : A -> Type.
+  Context `{eqDec A}.
+  Context `{forall a:A, @Full S (B a)}.
+
+  Global Instance fullInForall (l:list A) : @Full S (forall a, In a l -> B a).
+    induction l as [|a l rec].
+    - simple refine {| full := single _ |}.
+      + intros _ [].
+      + rewrite denoteSingleOk.
+        rewrite fullIsTrue.
+        apply Extensionality_Ensembles'.
+        intros f.
+        rewrite singletonIsEqual.
+        intuition.
+        simpl.
+        extensionality a.
+        extensionality h.
+        destruct h.
+    - simple refine {| full := _ |}.
+      + refine (all (fun b:B a => _)).
+        refine (all (fun f:(forall a, In a l -> B a) => _)).
+        refine (single _).
+        intros a' inl.
+        simpl in inl.
+        refine (match a =? a' with Specif.left e => _ | Specif.right e => _ end).
+        * refine (rew e in b).
+        * refine (f a' _).
+          clear -inl e.
+          abstract (destruct inl; congruence).
+      + rewrite fullIsTrue.
+        apply Extensionality_Ensembles'.
+        intros f.
+        intuition.
+        rewrite denoteAllOk.
+        simple refine (ex_intro _ _ _). {
+          refine (f a _).
+          left.
+          reflexivity.
+        }
+        simpl.
+        specialize @denoteAllOk; unfold Ensemble; intro h; rewrite h; clear h.
+        simple refine (ex_intro _ _ _). {
+          intros a' inl.
+          refine (f a' _).
+          simpl.
+          intuition.
+        }
+        simpl.
+        specialize @denoteSingleOk; unfold Ensemble; intro h; rewrite h; clear h.
+        rewrite singletonIsEqual.
+        extensionality a'.
+        extensionality inl.
+        break_match.
+        * destruct e.
+          simpl.
+          f_equal.
+          apply proof_irrelevance.
+        * f_equal.
+          apply proof_irrelevance.
+  Defined.
+
+  Context `{@Full listSpace A}.
+  Global Instance fullForall : Full (forall a : A, B a).
+    specialize (fullInForall (@full listSpace A _)); intros h.
+    simple refine {| full := _ |}.
+    - refine (all (fun f => single (fun a => _))).
+      exact (f a (inFull a)).
+    - rewrite fullIsTrue.
+      apply Extensionality_Ensembles'.
+      intros f.
+      intuition.
+      rewrite denoteAllOk.
+      simple refine (ex_intro _ _ _). {
+        intros a _.
+        apply f.
+      }
+      simpl.
+      specialize @denoteSingleOk; unfold Ensemble; intro h'; rewrite h'; clear h'.
+      constructor.
+  Defined.
+End FullForall.
+
+
 (* potential related work
 http://webdam.inria.fr/Alice/pdfs/Chapter-4.pdf (recommended by Shumo)
 http://www.sciencedirect.com/science/article/pii/S0022000000917136
@@ -41,510 +143,520 @@ the projection had to depend on the types in that list,
 which was hard to induct over. The named approach is much easier now.
 *)
 
-Module ConjuctiveQueryData (T : Types) (S : Schemas T) (R : Relations T S).
-  Import T S R.
-  Module SQL_TSR := SQL T S R.
-  Import SQL_TSR.
+Section CQ.
+  Variable SQLType : Type.
+  Variable TableName : Type.
+  Variable columnName : SQLType -> TableName -> Type.
+  Variable ProjName : Type.
+  Variable projType : ProjName -> SQLType.
 
-  Section ConjunctiveQuery.
-    Variable SQLType : Type.
-    Variable TableName : Type.
-    Variable columnName : SQLType -> TableName -> Type.
-    Variable ProjName : Type.
-    Variable projType : ProjName -> SQLType.
-
-    Record ConjunctiveQuery := {
-      TableAlias : TableName -> Type;
-      Access (st:SQLType) := {tn : TableName & (TableAlias tn * columnName st tn)};
-      selections : list {st:SQLType & (Access st * Access st)};
-      projection (pn:ProjName) : Access (projType pn)
-    }.
-
-    Variable Γ:Schema.
-    Variable s:TableName -> Schema.
-    Variable t:SQLType -> type.
-    Variable c:forall (st:SQLType) (tn:TableName) (cn:columnName st tn), Column (t st) (s tn).
-    Variable q:forall (tn:TableName), SQL Γ (s tn).
-    Variable cq:ConjunctiveQuery.
-
-    Definition projSchema : Schema := 
-      namedNode ProjName (fun pn => leaf (t (projType pn))).
-
-    Definition fromSchema := namedNode TableName (fun tn => namedNode (TableAlias cq tn) (const (s tn))).
-
-    Definition access {st} (a : Access cq st) : Column (t st) (Γ ++ fromSchema).
-      unfold Access in a.
-      refine (right ⋅ _).
-      refine (name (a.1) ⋅ _).
-      refine (name (fst a.2) ⋅ _).
-      refine (c (snd a.2)).
-    Defined.
- 
-    Definition denoteFrom : SQL Γ fromSchema.
-      refine (namedProduct (fun tn : TableName => _)).
-      refine (namedProduct (fun _ : TableAlias cq tn => _)).
-      refine (q tn).
-    Defined.
-
-    Definition denoteSelection : Pred (Γ ++ fromSchema).
-      refine ((fix rec (sels:list _) := _) (selections cq)).
-      refine (match sels with
-      | [] => TRUE
-      | sel::sels => _ AND rec sels
-      end).
-      refine (equal (variable _) (variable _)).
-      - exact (access (fst sel.2)).
-      - exact (access (snd sel.2)).
-    Defined.
-
-    Definition denoteProjection : Proj (Γ ++ fromSchema) projSchema :=
-       named (fun pn => access (projection cq pn)).
-
-    Definition denoteConjunctiveQuery : SQL Γ projSchema :=
-      SELECT1 denoteProjection FROM1 denoteFrom WHERE denoteSelection.
-  End ConjunctiveQuery.
- 
-  Record ConjunctiveQueryRewrite := conjunctiveQueryRewrite {
-    SQLType : Type;
-    TableName : Type;
-    columnName : SQLType -> TableName -> Type;
-    ProjName : Type;
-    projType : ProjName -> SQLType;
-    query0 : ConjunctiveQuery columnName projType; 
-    query1 : ConjunctiveQuery columnName projType
+  Record CQ := {
+    TableAlias : TableName -> Type;
+    Access (st:SQLType) := {tn : TableName & (TableAlias tn * columnName st tn)};
+    selections : list {st:SQLType & (Access st * Access st)};
+    projection (pn:ProjName) : Access (projType pn)
   }.
+End CQ.
 
-  Definition denoteConjunctiveQueryRewriteContainment (r:ConjunctiveQueryRewrite) : Type.
-    refine (forall (Γ:Schema), _).
-    refine (forall (s:TableName r -> Schema), _).
-    refine (forall (T:SQLType r -> type), _).
-    refine (forall (c:forall (st:SQLType r) (tn:TableName r) (cn:columnName r st tn), Column (T st) (s tn)), _).
-    refine (forall (q:(forall (tn:TableName r), SQL Γ (s tn))), _).
-    refine (forall (g:Tuple Γ) (t:Tuple (projSchema (projType r) T)), (⟦ Γ ⊢ _ : _ ⟧ g t : Prop) -> ⟦ Γ ⊢ _ : _ ⟧ g t : Prop).
-    - refine (denoteConjunctiveQuery s T c q (query0 r)).
-    - refine (denoteConjunctiveQuery s T c q (query1 r)).
-  Defined. 
+Record CQRewrite := {
+  SQLType : Type;
+  TableName : Type;
+  columnName : SQLType -> TableName -> Type;
+  ProjName : Type;
+  projType : ProjName -> SQLType;
+  query0 : CQ columnName projType; 
+  query1 : CQ columnName projType
+}.
 
-  Definition denoteConjunctiveQueryRewriteEquivalence (r:ConjunctiveQueryRewrite) : Type.
-    refine (forall (Γ:Schema), _).
-    refine (forall (s:TableName r -> Schema), _).
-    refine (forall (T:SQLType r -> type), _).
-    refine (forall (c:forall (st:SQLType r) (tn:TableName r) (cn:columnName r st tn), Column (T st) (s tn)), _).
-    refine (forall (q:(forall (tn:TableName r), SQL Γ (s tn))), _).
-    refine (⟦ Γ ⊢ _ : _ ⟧ = ⟦ Γ ⊢ _ : _ ⟧).
-    - refine (denoteConjunctiveQuery s T c q (query0 r)).
-    - refine (denoteConjunctiveQuery s T c q (query1 r)).
-  Defined. 
+Section Checks.
+  Variable r : CQRewrite.
 
-  Module SelfJoin.
-    Inductive tables := R.
-    Inductive columns := a.
-    Inductive projs := w.
-    Inductive aliases0 := x | y.
-    Inductive aliases1 := z.
-    Inductive types := string.
+  Context {BA:Basic}.
+  Context {SE:@Search BA}.
 
-    Definition selfJoin : ConjunctiveQueryRewrite.
-      refine {|
-        TableName := tables;
-        columnName t tn := columns;
-        ProjName := projs;
-        projType pn := string;
-        query0 := {| TableAlias tn := aliases0; 
-                     projection pn := (R;(x,a));
-                     selections := [(string; ((R;(x,a)), (R;(y,a))))]
-                  |};
-        query1 := {| TableAlias tn := aliases1; 
-                     projection pn := (R;(z,a));
-                     selections := []
-                  |}
-      |}.
-    Defined.
+  Context `{@Full listSpace (TableName r)}.
+  Context `{forall st tn, @Full BA (columnName r st tn)}.
+  Context `{@Full listSpace (ProjName r)}.
+  Context `{forall tn, @Full BA (TableAlias (query0 r) tn)}.
+  Context `{forall tn, @Full listSpace (TableAlias (query1 r) tn)}.
 
-    Goal denoteConjunctiveQueryRewriteEquivalence selfJoin.
-      unfold selfJoin.
-      unfold denoteConjunctiveQueryRewriteEquivalence.
-      simpl.
-      intros.
-      extensionality g.
-      extensionality t.
-      apply prop_ext.
-      constructor;
-      intros [t0 h];
-      repeat match goal with
-             | h:?A /\ ?B |- _ => destruct h
-             end.
-      - simple refine (ex_intro _ _ _). {
-          unfold const.
-          intros [] []; apply t0.
-          + exact y.
-        }
-        simpl.
-        repeat match goal with
-        | h:denoteProj _ _ = denoteProj _ _ |- _ => rewrite h in *; clear h
-        | h:_ = t |- _ => rewrite <- h; clear h
-        end.
-        match goal with
-        | h:forall _ _, denoteSQL _ _ _ |- _ => rename h into from
-        end.
-        repeat match goal with
-        | |- _ /\ _ => constructor
-        end.
-        + reflexivity.
-        + intros [] [];
-          match goal with
-          | h:forall _ _, denoteSQL _ _ _ |- _ => apply h
-          end.
-        + reflexivity.
-      - simple refine (ex_intro _ _ _). {
-          unfold const.
-          intros [] []; apply t0.
-          + exact z.
-          + exact z.
-        }
-        simpl.
-        repeat match goal with
-        | h:denoteProj _ _ = denoteProj _ _ |- _ => rewrite h in *; clear h
-        | h:_ = t |- _ => rewrite <- h; clear h
-        end.
-        match goal with
-        | h:forall _ _, denoteSQL _ _ _ |- _ => rename h into from
-        end.
-        repeat match goal with
-        | |- _ /\ _ => constructor
-        end.
-        + reflexivity.
-        + trivial.
-        + intros [] [];
-          match goal with
-          | h:forall _ _, denoteSQL _ _ _ |- _ => apply h
-          end.
-        + reflexivity.
-    Qed.
-  End SelfJoin.
+  Context `{eqDec (TableName r)}.
+  Context `{eqDec (ProjName r)}.
+  Context `{forall st tn, eqDec (columnName r st tn)}.
+  Context `{forall tn, eqDec (TableAlias (query0 r) tn)}.
+  Context `{forall tn, eqDec (TableAlias (query1 r) tn)}.
 
-  Module TransitiveJoin.
-    Inductive tables := R.
-    Inductive columns := a | b | c.
-    Inductive projs := w.
-    Inductive aliases := x.
-    Variable string : type.
+  Definition Assignment := (forall tn:(TableName r), TableAlias (query1 r) tn -> TableAlias (query0 r) tn).
+   
+  Instance fullAssignment : @Full BA Assignment.
+    unfold Assignment. 
+    refine (_).
+  Defined.
 
-    Definition transitiveJoin : ConjunctiveQueryRewrite.
-      refine {|
-        TableName := tables;
-        columnName t tn := columns;
-        ProjName := projs;
-        projType pn := string;
-        query0 := {| TableAlias tn := aliases; 
-                     projection pn := (R;(x,a));
-                     selections := [(string; ((R;(x,a)), (R;(x,b))));
-                                    (string; ((R;(x,b)), (R;(x,c))))]
-                  |};
-        query1 := {| TableAlias tn := aliases; 
-                     projection pn := (R;(x,a));
-                     selections := [(string; ((R;(x,a)), (R;(x,b))));
-                                    (string; ((R;(x,a)), (R;(x,c))))]
-                  |}
-      |}.
-    Defined.
+  Definition AccessQ0 := Access (query0 r).
+  Definition AccessQ1 := Access (query1 r).
 
-    Goal denoteConjunctiveQueryRewriteEquivalence transitiveJoin.
-      unfold transitiveJoin.
-      unfold denoteConjunctiveQueryRewriteEquivalence.
-      simpl.
-      intros.
-      extensionality g.
-      extensionality t.
-      apply prop_ext.
-      constructor;
-      intros [t0 h];
-      repeat match goal with
-             | h:?A /\ ?B |- _ => destruct h
-             end.
-      - simple refine (ex_intro _ _ _). {
-          unfold const.
-          intros [] []; apply t0.
-          + exact x.
-        }
-        simpl.
-        repeat match goal with
-        | h:denoteProj _ _ = denoteProj _ _ |- _ => rewrite h in *; clear h
-        | h:_ = t |- _ => rewrite <- h; clear h
-        end.
-        repeat match goal with
-        | |- _ /\ _ => constructor
-        end.
-        + reflexivity.
-        + reflexivity.
-        + trivial.
-        + intros [] [];
-          match goal with
-          | h:forall _ _, denoteSQL _ _ _ |- _ => apply h
-          end.
-        + reflexivity.
-      - simple refine (ex_intro _ _ _). {
-          unfold const.
-          intros [] []; apply t0.
-          + exact x.
-        }
-        simpl.
-        repeat match goal with
-        | h:denoteProj _ _ = denoteProj _ _ |- _ => rewrite h in *; clear h
-        | h:_ = t |- _ => rewrite <- h; clear h
-        end.
-        repeat match goal with
-        | |- _ /\ _ => constructor
-        end.
-        + reflexivity.
-        + reflexivity.
-        + trivial.
-        + intros [] [];
-          match goal with
-          | h:forall _ _, denoteSQL _ _ _ |- _ => apply h
-          end.
-        + reflexivity.
-    Qed.
-  End TransitiveJoin.
+  Instance eqDecAccessQ1 st : eqDec (AccessQ1 st).
+    unfold Access.
+    refine (_).
+  Defined.
 
-  Arguments full [_] _ [_].
+  Definition assignmentAccess {st} (a:Assignment) (ac:AccessQ1 st) : AccessQ0 st.
+      unfold AccessQ0, AccessQ1, Access in *.
+      refine (let tn := ac.1 in _).
+      refine (let ta := fst ac.2 in _).
+      refine (let cn := snd ac.2 in _).
+      refine (tn; (a tn ta, cn)).
+  Defined.
 
-  Lemma inFull {A} `{@Full listSpace A} (a:A) : In a (full A).
+  Definition containmentCheck : Result Assignment.
+    refine (search _).
+    refine (all (fun a : Assignment => _)).
+    unfold Assignment in a.
+    refine (if (_:bool) then single a else empty).
+    refine (_ && _).
+    - (* check selection variables are equal *)
+      refine (forallb _  (selections (query1 r))).
+      intros ac.
+      refine (assignmentAccess a (fst ac.2) =? 
+              assignmentAccess a (snd ac.2)).
+    - (* check projection variables are equal *)
+      refine (forallb _  (full (ProjName r))).
+      intros pn.
+      refine (assignmentAccess a (projection (query1 r) pn) =? 
+              projection (query0 r) pn).
+  Defined.
+End Checks.
+
+(* it's really ugly that I have to use Parameters, but I don't 
+   see any other way to universally quantify over modules *)
+Parameter type : Type.
+Parameter denoteType : type -> Type.
+
+Module T : Types.
+  Definition type := type.
+  Definition denotationType := {| denote := denoteType |}.
+End T.
+  
+Module TD := SQLDenotation T.
+Import TD.
+Parameter relation : Schema -> Type.
+Parameter denoteRelation : forall s, relation s -> Relation s.
+
+Module R : Relations T.
+  Module TD := TD.
+  Definition relation := relation.
+  Definition denotationRelation s := {| denote := @denoteRelation s |}.
+End R.
+
+Module SQL := SQL T R.
+Import SQL.
+Import T.
+Import R.
+
+Section DenoteCQ.
+  Variable SQLType : Type.
+  Variable TableName : Type.
+  Variable columnName : SQLType -> TableName -> Type.
+  Variable ProjName : Type.
+  Variable projType : ProjName -> SQLType.
+
+  Variable Γ:Schema.
+  Variable s:TableName -> Schema.
+  Variable t:SQLType -> type.
+  Variable c:forall (st:SQLType) (tn:TableName) (cn:columnName st tn), Column (t st) (s tn).
+  Variable q:forall (tn:TableName), SQL Γ (s tn).
+  Variable cq:CQ columnName projType.
+
+  Definition projSchema : Schema := 
+    namedNode ProjName (fun pn => leaf (t (projType pn))).
+
+  Definition fromSchema := namedNode TableName (fun tn => namedNode (TableAlias cq tn) (const (s tn))).
+
+  Definition access {st} (a : Access cq st) : Column (t st) (Γ ++ fromSchema).
+    unfold Access in a.
+    refine (right ⋅ _).
+    refine (name (a.1) ⋅ _).
+    refine (name (fst a.2) ⋅ _).
+    refine (c (snd a.2)).
+  Defined.
+
+  Definition denoteFrom : SQL Γ fromSchema.
+    refine (namedProduct (fun tn : TableName => _)).
+    refine (namedProduct (fun _ : TableAlias cq tn => _)).
+    refine (q tn).
+  Defined.
+
+  Definition denoteSelection : Pred (Γ ++ fromSchema).
+    refine ((fix rec (sels:list _) := _) (selections cq)).
+    refine (match sels with
+    | [] => TRUE
+    | sel::sels => _ AND rec sels
+    end).
+    refine (equal (variable _) (variable _)).
+    - exact (access (fst sel.2)).
+    - exact (access (snd sel.2)).
+  Defined.
+
+  Definition denoteProjection : Proj (Γ ++ fromSchema) projSchema :=
+     named (fun pn => access (projection cq pn)).
+
+  Definition denoteCQ : SQL Γ projSchema :=
+    SELECT1 denoteProjection FROM1 denoteFrom WHERE denoteSelection.
+End DenoteCQ.
+
+Definition denoteCQRewriteContainment (r:CQRewrite) : Type.
+  refine (forall (Γ:Schema), _).
+  refine (forall (s:TableName r -> Schema), _).
+  refine (forall (T:SQLType r -> type), _).
+  refine (forall (c:forall (st:SQLType r) (tn:TableName r) (cn:columnName r st tn), Column (T st) (s tn)), _).
+  refine (forall (q:(forall (tn:TableName r), SQL Γ (s tn))), _).
+  refine (forall (g:Tuple Γ) (t:Tuple (projSchema (projType r) T)), (⟦ Γ ⊢ _ : _ ⟧ g t : Prop) -> ⟦ Γ ⊢ _ : _ ⟧ g t : Prop).
+  - refine (denoteCQ s T c q (query0 r)).
+  - refine (denoteCQ s T c q (query1 r)).
+Defined. 
+
+Definition denoteCQRewriteEquivalence (r:CQRewrite) : Type.
+  refine (forall (Γ:Schema), _).
+  refine (forall (s:TableName r -> Schema), _).
+  refine (forall (T:SQLType r -> type), _).
+  refine (forall (c:forall (st:SQLType r) (tn:TableName r) (cn:columnName r st tn), Column (T st) (s tn)), _).
+  refine (forall (q:(forall (tn:TableName r), SQL Γ (s tn))), _).
+  refine (⟦ Γ ⊢ _ : _ ⟧ = ⟦ Γ ⊢ _ : _ ⟧).
+  - refine (denoteCQ s T c q (query0 r)).
+  - refine (denoteCQ s T c q (query1 r)).
+Defined. 
+
+Section Soundness.
+  Variable r : CQRewrite.
+
+  Context {BA:Basic}.
+  Context {SE:@Search BA}.
+
+  Context `{@Full listSpace (TableName r)}.
+  Context `{forall st tn, @Full BA (columnName r st tn)}.
+  Context `{@Full listSpace (ProjName r)}.
+  Context `{forall tn, @Full BA (TableAlias (query0 r) tn)}.
+  Context `{forall tn, @Full listSpace (TableAlias (query1 r) tn)}.
+
+  Context `{eqDec (TableName r)}.
+  Context `{eqDec (ProjName r)}.
+  Context `{forall st tn, eqDec (columnName r st tn)}.
+  Context `{forall tn, eqDec (TableAlias (query0 r) tn)}.
+  Context `{forall tn, eqDec (TableAlias (query1 r) tn)}.
+  
+  Definition containmentSpec : option {a |
+      (forall ac : {st : SQLType r & (AccessQ1 r st * AccessQ1 r st)}, 
+        List.In ac (selections (query1 r)) -> 
+          assignmentAccess a (fst ac.2) = assignmentAccess a (snd ac.2))
+      /\
+      (forall (pn:ProjName r), 
+          assignmentAccess a (projection (query1 r) pn) = projection (query0 r) pn)
+    }.
+    destruct (containmentCheck r) as [a|] eqn:h; [apply Some|exact None].
+    refine (exist _ a _).
+    unfold containmentCheck in *.
+    apply searchSolution in h.
+    rewrite denoteAllOk in h.
+    destruct h as [a' h].
+    break_match; revgoals. {
+      specialize @denoteEmptyOk; unfold Ensemble; intro h'; rewrite h' in h; clear h'.
+      destruct h.
+    }
+    specialize @denoteSingleOk; unfold Ensemble; intro h'; rewrite h' in h; clear h'.
+    destruct h; rename a' into a.
+    rename Heqb into h.
+    rewrite andb_true_iff in h.
+    constructor.
+    - destruct h as [h _].
+      rewrite forallb_forall in h.
+      intros ac inSel.
+      specialize (h ac inSel).
+      unfold sumBoolToBool in h.
+      break_match; intuition.
+    - destruct h as [_ h].
+      rewrite forallb_forall in h.
+      intros pn.
+      specialize (h pn (inFull pn)).
+      unfold sumBoolToBool in h.
+      break_match; intuition.
+  Defined.
+
+  Definition containmentSound : option (denoteCQRewriteContainment r).
+    destruct containmentSpec as [[a [h h']]|]; [apply Some|exact None].
+    unfold denoteCQRewriteContainment.
     simpl.
-    specialize (@denoteFullOk listSpace A _).
-    rewrite fullIsTrue.
+    intros Γ s T c q g t [t0 [[select from] project]].
+    refine (ex_intro _ (fun tn ta => t0 tn (a tn ta)) _).
+    constructor; [constructor|].
+    - (* selection variables are correct *)
+      clear h'.
+      unfold denoteSelection.
+      induction (selections (query1 r)) as [|sel sels rec].
+      + simpl.
+        trivial.
+      + simpl.
+        constructor.
+        * clear rec.
+          destruct sel as [st [[tn [ta cn]] [tn' [ta' cn']]]].
+          simpl.
+          simpl in h.
+          match goal with
+          | h:forall _, ?a = _ \/ _ -> _ |- _ => specialize (h a (or_introl eq_refl))
+          end.
+          unfold assignmentAccess in h.
+          simpl in h.
+          crush.
+        * apply rec.
+          intuition.
+    - (* from clause is correct *)
+      intros tn ta.
+      apply from.
+    - (* projection variables are correct *)
+      rewrite <- project; clear select project.
+      extensionality pn.
+      specialize (h' pn).
+      unfold assignmentAccess in h'.
+      rewrite <- h'.
+      simpl.
+      reflexivity.
+  Defined.
+End Soundness.
+
+Module SelfJoin.
+  Inductive tables := R.
+  Inductive columns := a.
+  Inductive projs := w.
+  Inductive aliases0 := x | y.
+  Inductive aliases1 := z.
+  Inductive types := string.
+
+  Definition selfJoin : CQRewrite.
+    refine {|
+      TableName := tables;
+      columnName t tn := columns;
+      ProjName := projs;
+      projType pn := string;
+      query0 := {| TableAlias tn := aliases0; 
+                   projection pn := (R;(x,a));
+                   selections := [(string; ((R;(x,a)), (R;(y,a))))]
+                |};
+      query1 := {| TableAlias tn := aliases1; 
+                   projection pn := (R;(z,a));
+                   selections := []
+                |}
+    |}.
+  Defined.
+
+  Goal denoteCQRewriteEquivalence selfJoin.
+    unfold selfJoin.
+    unfold denoteCQRewriteEquivalence.
     simpl.
-    intros h.
-    apply equal_f with (x:=a) in h.
-    rewrite h.
-    trivial.
+    intros.
+    extensionality g.
+    extensionality t.
+    apply prop_ext.
+    constructor;
+    intros [t0 h];
+    repeat match goal with
+           | h:?A /\ ?B |- _ => destruct h
+           end.
+    - simple refine (ex_intro _ _ _). {
+        unfold const.
+        intros [] []; apply t0.
+        + exact y.
+      }
+      simpl.
+      repeat match goal with
+      | h:denoteProj _ _ = denoteProj _ _ |- _ => rewrite h in *; clear h
+      | h:_ = t |- _ => rewrite <- h; clear h
+      end.
+      match goal with
+      | h:forall _ _, denoteSQL _ _ _ |- _ => rename h into from
+      end.
+      repeat match goal with
+      | |- _ /\ _ => constructor
+      end.
+      + reflexivity.
+      + intros [] [];
+        match goal with
+        | h:forall _ _, denoteSQL _ _ _ |- _ => apply h
+        end.
+      + reflexivity.
+    - simple refine (ex_intro _ _ _). {
+        unfold const.
+        intros [] []; apply t0.
+        + exact z.
+        + exact z.
+      }
+      simpl.
+      repeat match goal with
+      | h:denoteProj _ _ = denoteProj _ _ |- _ => rewrite h in *; clear h
+      | h:_ = t |- _ => rewrite <- h; clear h
+      end.
+      match goal with
+      | h:forall _ _, denoteSQL _ _ _ |- _ => rename h into from
+      end.
+      repeat match goal with
+      | |- _ /\ _ => constructor
+      end.
+      + reflexivity.
+      + trivial.
+      + intros [] [];
+        match goal with
+        | h:forall _ _, denoteSQL _ _ _ |- _ => apply h
+        end.
+      + reflexivity.
   Qed.
 
-  Section Correctness.
-    Variable r : ConjunctiveQueryRewrite.
+  Existing Instance listSpace.
+  Existing Instance listSearch.
 
-    Context {BA:Basic}.
-    Context {SE:@Search BA}.
+  Ltac fullIndList :=
+    rewrite fullIsTrue;
+    apply Extensionality_Ensembles';
+    intros [];
+    simpl;
+    intuition.
 
-    Instance fullInForall {A B} `{eqDec A}
-                                `{forall a:A, @Full BA (B a)}
-                                 (l:list A) :
-                                 Full (forall a, In a l -> B a).
-      induction l as [|a l rec].
-      - simple refine {| full := single _ |}.
-        + intros _ [].
-        + rewrite denoteSingleOk.
-          rewrite fullIsTrue.
-          apply Extensionality_Ensembles'.
-          intros f.
-          rewrite singletonIsEqual.
-          intuition.
-          simpl.
-          extensionality a.
-          extensionality h.
-          destruct h.
-      - simple refine {| full := _ |}.
-        + refine (all (fun b:B a => _)).
-          refine (all (fun f:(forall a, In a l -> B a) => _)).
-          refine (single _).
-          intros a' inl.
-          simpl in inl.
-          refine (match a =? a' with Specif.left e => _ | Specif.right e => _ end).
-          * refine (rew e in b).
-          * refine (f a' _).
-            clear -inl e.
-            abstract (destruct inl; congruence).
-        + rewrite fullIsTrue.
-          apply Extensionality_Ensembles'.
-          intros f.
-          intuition.
-          rewrite denoteAllOk.
-          simple refine (ex_intro _ _ _). {
-            refine (f a _).
-            left.
-            reflexivity.
-          }
-          simpl.
-          specialize @denoteAllOk; unfold Ensemble; intro h; rewrite h; clear h.
-          simple refine (ex_intro _ _ _). {
-            intros a' inl.
-            refine (f a' _).
-            simpl.
-            intuition.
-          }
-          simpl.
-          specialize @denoteSingleOk; unfold Ensemble; intro h; rewrite h; clear h.
-          rewrite singletonIsEqual.
-          extensionality a'.
-          extensionality inl.
-          break_match.
-          * destruct e.
-            simpl.
-            f_equal.
-            apply proof_irrelevance.
-          * f_equal.
-            apply proof_irrelevance.
-    Defined.
+  Instance fullTables : Full tables.
+    refine {| full := [R] |}; fullIndList.
+  Defined.
 
-    Instance fullForall {A B} `{eqDec A}
-                              `{@Full listSpace A}
-                              `{forall a:A, @Full BA (B a)} : 
-                               Full (forall a : A, B a).
-      specialize (fullInForall (@full listSpace A _)); intros h.
-      simple refine {| full := _ |}.
-      - refine (all (fun f => single (fun a => _))).
-        exact (f a (inFull a)).
-      - rewrite fullIsTrue.
-        apply Extensionality_Ensembles'.
-        intros f.
-        intuition.
-        rewrite denoteAllOk.
-        simple refine (ex_intro _ _ _). {
-          intros a _.
-          apply f.
-        }
-        simpl.
-        specialize (@denoteSingleOk BA (forall a:A, B a)); intros h'.
-        unfold Ensemble in h'.
-        rewrite h'; clear h'.
-        constructor.
-    Defined.
+  Instance fullProjs : Full projs.
+    refine {| full := [w] |}; fullIndList.
+  Defined.
 
-    Context `{@Full listSpace (TableName r)}.
-    Context `{forall st tn, @Full BA (columnName r st tn)}.
-    Context `{@Full listSpace (ProjName r)}.
-    Context `{forall tn, @Full BA (TableAlias (query0 r) tn)}.
-    Context `{forall tn, @Full listSpace (TableAlias (query1 r) tn)}.
+  Instance fullAliases0 : Full aliases0.
+    refine {| full := [x;y] |}; fullIndList.
+  Defined.
 
-    Context `{eqDec (TableName r)}.
-    Context `{eqDec (ProjName r)}.
-    Context `{forall st tn, eqDec (columnName r st tn)}.
-    Context `{forall tn, eqDec (TableAlias (query0 r) tn)}.
-    Context `{forall tn, eqDec (TableAlias (query1 r) tn)}.
+  Instance fullAliases1 : Full aliases1.
+    refine {| full := [z] |}; fullIndList.
+  Defined.
 
-    Definition Assignment := (forall tn:(TableName r), TableAlias (query1 r) tn -> TableAlias (query0 r) tn).
-   
-    Instance fullAssignment : @Full BA Assignment.
-      unfold Assignment. 
-      refine (_).
-    Defined.
+  Instance eqDecTables : eqDec tables. 
+    refine {| eqDecide := _ |}; decide equality.
+  Defined.
+ 
+  Instance eqDecAliases0 : eqDec aliases0. 
+    refine {| eqDecide := _ |}; decide equality.
+  Defined.
 
-    Definition AccessQ0 := Access (query0 r).
-    Definition AccessQ1 := Access (query1 r).
+  Instance eqDecAliases1 : eqDec aliases1. 
+    refine {| eqDecide := _ |}; decide equality.
+  Defined.
 
-    Instance eqDecAccessQ1 st : eqDec (AccessQ1 st).
-      unfold Access.
-      refine (_).
-    Defined.
+  Instance eqDecColumns : eqDec columns. 
+    refine {| eqDecide := _ |}; decide equality.
+  Defined.
 
-    Coercion sumBoolToBool {P Q} (pq:{P} + {Q}) : bool :=
-      if pq then Datatypes.true else Datatypes.false.
+(*
+  Goal True.
+    refine (let l := @full listSpace (aliases0 -> aliases0) fullForall in _).
+    compute in l.
+    refine (let f := match l with _::h::_ => h | _ => fun _ => x end in _).
+    compute in f.
+    Compute (f x).
+    Compute (f y).
+    trivial.      
+  Qed.
+*)
+  Definition checkSelfJoinContainment :=
+    match containmentCheck selfJoin with 
+    | solution _ => Datatypes.true 
+    | _ => Datatypes.false 
+    end.
+End SelfJoin.
 
-    Definition assignmentAccess {st} (a:Assignment) (ac:AccessQ1 st) : AccessQ0 st.
-        unfold AccessQ0, AccessQ1, Access in *.
-        refine (let tn := ac.1 in _).
-        refine (let ta := fst ac.2 in _).
-        refine (let cn := snd ac.2 in _).
-        refine (tn; (a tn ta, cn)).
-    Defined.
+Module TransitiveJoin.
+  Inductive tables := R.
+  Inductive columns := a | b | c.
+  Inductive projs := w.
+  Inductive aliases := x.
+  Variable string : type.
 
-    Definition containment : Result Assignment.
-      refine (search _).
-      refine (all (fun a : Assignment => _)).
-      unfold Assignment in a.
-      refine (if (_:bool) then single a else empty).
-      refine (_ && _).
-      - (* check selection variables are equal *)
-        refine (forallb _  (selections (query1 r))).
-        intros ac.
-        refine (assignmentAccess a (fst ac.2) =? 
-                assignmentAccess a (snd ac.2)).
-      - (* check projection variables are equal *)
-        refine (forallb _  (full (ProjName r))).
-        intros pn.
-        refine (assignmentAccess a (projection (query1 r) pn) =? 
-                projection (query0 r) pn).
-    Defined.
+  Definition transitiveJoin : CQRewrite.
+    refine {|
+      TableName := tables;
+      columnName t tn := columns;
+      ProjName := projs;
+      projType pn := string;
+      query0 := {| TableAlias tn := aliases; 
+                   projection pn := (R;(x,a));
+                   selections := [(string; ((R;(x,a)), (R;(x,b))));
+                                  (string; ((R;(x,b)), (R;(x,c))))]
+                |};
+      query1 := {| TableAlias tn := aliases; 
+                   projection pn := (R;(x,a));
+                   selections := [(string; ((R;(x,a)), (R;(x,b))));
+                                  (string; ((R;(x,a)), (R;(x,c))))]
+                |}
+    |}.
+  Defined.
 
-    Definition containmentSpec : option {a |
-        (forall ac : {st : SQLType r & (AccessQ1 st * AccessQ1 st)}, 
-          List.In ac (selections (query1 r)) -> 
-            assignmentAccess a (fst ac.2) = assignmentAccess a (snd ac.2))
-        /\
-        (forall (pn:ProjName r), 
-            assignmentAccess a (projection (query1 r) pn) = projection (query0 r) pn)
-      }.
-      destruct containment as [a|] eqn:h; [apply Some|exact None].
-      refine (exist _ a _).
-      unfold containment in *.
-      apply searchSolution in h.
-      rewrite denoteAllOk in h.
-      destruct h as [a' h].
-      break_match; revgoals. {
-        specialize (@denoteEmptyOk BA Assignment); intros h'.
-        unfold Ensemble in h'.
-        rewrite h' in h; clear h'.
-        destruct h.
+  Goal denoteCQRewriteEquivalence transitiveJoin.
+    unfold transitiveJoin.
+    unfold denoteCQRewriteEquivalence.
+    simpl.
+    intros.
+    extensionality g.
+    extensionality t.
+    apply prop_ext.
+    constructor;
+    intros [t0 h];
+    repeat match goal with
+           | h:?A /\ ?B |- _ => destruct h
+           end.
+    - simple refine (ex_intro _ _ _). {
+        unfold const.
+        intros [] []; apply t0.
+        + exact x.
       }
-      specialize (@denoteSingleOk BA Assignment); intros h'.
-      unfold Ensemble in h'.
-      rewrite h' in h; clear h'.
-      destruct h; rename a' into a.
-      rename Heqb into h.
-      rewrite andb_true_iff in h.
-      constructor.
-      - destruct h as [h _].
-        rewrite forallb_forall in h.
-        intros ac inSel.
-        specialize (h ac inSel).
-        unfold sumBoolToBool in h.
-        break_match; intuition.
-      - destruct h as [_ h].
-        rewrite forallb_forall in h.
-        intros pn.
-        specialize (h pn (inFull pn)).
-        unfold sumBoolToBool in h.
-        break_match; intuition.
-    Defined.
-
-    Definition containmentSound : option (denoteConjunctiveQueryRewriteContainment r).
-      destruct containmentSpec as [[a [h h']]|]; [apply Some|exact None].
-      unfold denoteConjunctiveQueryRewriteContainment.
       simpl.
-      intros Γ s T c q g t [t0 [[select from] project]].
-      refine (ex_intro _ (fun tn ta => t0 tn (a tn ta)) _).
-      constructor; [constructor|].
-      - (* selection variables are correct *)
-        clear h'.
-        unfold denoteSelection.
-        induction (selections (query1 r)) as [|sel sels rec].
-        + simpl.
-          trivial.
-        + simpl.
-          constructor.
-          * clear rec.
-            destruct sel as [st [[tn [ta cn]] [tn' [ta' cn']]]].
-            simpl.
-            simpl in h.
-            match goal with
-            | h:forall _, ?a = _ \/ _ -> _ |- _ => specialize (h a (or_introl eq_refl))
-            end.
-            unfold assignmentAccess in h.
-            simpl in h.
-            crush.
-          * apply rec.
-            intuition.
-      - (* from clause is correct *)
-        intros tn ta.
-        apply from.
-      - (* projection variables are correct *)
-        rewrite <- project; clear select project.
-        extensionality pn.
-        specialize (h' pn).
-        unfold assignmentAccess in h'.
-        rewrite <- h'.
-        simpl.
-        reflexivity.
-    Qed.
-  End Correctness.
-End ConjuctiveQueryData.
+      repeat match goal with
+      | h:denoteProj _ _ = denoteProj _ _ |- _ => rewrite h in *; clear h
+      | h:_ = t |- _ => rewrite <- h; clear h
+      end.
+      repeat match goal with
+      | |- _ /\ _ => constructor
+      end.
+      + reflexivity.
+      + reflexivity.
+      + trivial.
+      + intros [] [];
+        match goal with
+        | h:forall _ _, denoteSQL _ _ _ |- _ => apply h
+        end.
+      + reflexivity.
+    - simple refine (ex_intro _ _ _). {
+        unfold const.
+        intros [] []; apply t0.
+        + exact x.
+      }
+      simpl.
+      repeat match goal with
+      | h:denoteProj _ _ = denoteProj _ _ |- _ => rewrite h in *; clear h
+      | h:_ = t |- _ => rewrite <- h; clear h
+      end.
+      repeat match goal with
+      | |- _ /\ _ => constructor
+      end.
+      + reflexivity.
+      + reflexivity.
+      + trivial.
+      + intros [] [];
+        match goal with
+        | h:forall _ _, denoteSQL _ _ _ |- _ => apply h
+        end.
+      + reflexivity.
+  Qed.
+End TransitiveJoin.
+
+Check SelfJoin.checkSelfJoinContainment.
+
+Extraction Language Scheme.
+Extraction "vericq" SelfJoin.checkSelfJoinContainment.
+
+(* Extraction "vericq" SelfJoin.checkSelfJoinContainment. *)
+

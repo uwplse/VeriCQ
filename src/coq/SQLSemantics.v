@@ -1,17 +1,6 @@
 Require Import Denotation.
 
-Module Type Types.
-  Parameter type : Type.
-  Parameter denotationType : Denotation type Type.
-
-  Parameter constant : type -> Type.
-  Parameter unary : type -> type -> Type.
-  Parameter binary : type -> type -> type -> Type.
-
-  Parameter denotationConstant : forall S, Denotation (constant S) ⟦ S ⟧.
-  Parameter denotationUnary : forall S T, Denotation (unary S T) (⟦ S ⟧ -> ⟦ T ⟧).
-  Parameter denotationBinary : forall S T U, Denotation (binary S T U) (⟦ S ⟧ -> ⟦ T ⟧ -> ⟦ U ⟧).
-End Types.
+Open Scope type.
 
 Inductive Tree (A:Type) := 
 | namedNode N (t:N -> Tree A)
@@ -25,6 +14,11 @@ Arguments node {_} _ _.
 Arguments leaf {_} _.
 Arguments empty {_}. 
 
+Module Type Types.
+  Parameter type : Type.
+  Parameter denotationType : Denotation type Type.
+End Types.
+
 Module SQLDenotation (T : Types).
   Import T.
   (* definition of inductive types in 
@@ -37,8 +31,6 @@ Module SQLDenotation (T : Types).
   Definition Schema := Tree type.
   Definition singleton := @leaf type.
   Notation "s0 ++ s1" := (node s0 s1).
-
-  Open Scope type.
 
   Fixpoint Tuple (s:Schema) : Type.
     refine (match s with
@@ -54,15 +46,11 @@ Module SQLDenotation (T : Types).
   Definition Query Γ s := Tuple Γ -> Relation s.
 End SQLDenotation.
 
-Module Type Schemas (T : Types).
+Module Type Relations (T : Types).
   Import T.
   Module TD := SQLDenotation T.
   Import TD.
   Export TD.
-End Schemas.
-
-Module Type Relations (T : Types) (S : Schemas T).
-  Import T S.
 
   Parameter relation : Schema -> Type.
   Parameter denotationRelation : forall s, Denotation (relation s) (Relation s).
@@ -71,8 +59,8 @@ End Relations.
 (* We have SQL depend on modules instead of type class instances
    because type classes lead to bad unfolding behavior of 
    mutually inductive fixpoints. *)
-Module SQL (T : Types) (S : Schemas T) (R : Relations T S).
-  Import T S R.
+Module SQL (T : Types) (R : Relations T).
+  Import T R.
 
   Inductive SQL : Schema -> Schema -> Type :=
   | select  {Γ s} : Pred (Γ ++ s) -> SQL Γ s -> SQL Γ s
