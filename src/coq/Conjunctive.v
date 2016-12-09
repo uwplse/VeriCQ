@@ -42,7 +42,7 @@ Lemma inFull {A} `{@Full listSpace A} (a:A) : In a (full A).
 Qed.
 
 Section FullForall.
-  Context {S:Basic}.
+  Context `{S:Basic}.
   Variable A : Type.
   Variable B : A -> Type.
   Context `{eqDec A}.
@@ -178,7 +178,7 @@ Class CQRewrite := {
 }.
 
 Section Checks.
-  Context `{Search}.
+  Context `{S:Search}.
 
   Section Conjunctive.
     Context `{r:CQRewrite}.
@@ -331,7 +331,7 @@ Section CQRewrite.
 End CQRewrite.
 
 Section Soundness.
-  Context `{Search}.
+  Context `{S:Search}.
   Context `{r:CQRewrite}.
  
   Definition containmentSpec : option {a |
