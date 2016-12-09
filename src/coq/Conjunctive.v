@@ -426,10 +426,11 @@ Section Soundness.
   Defined.
 End Soundness.
 
-Ltac fullIndList :=
+Ltac fullInductive :=
   rewrite fullIsTrue;
   apply Extensionality_Ensembles';
   intros [];
-  simpl;
-  intuition.
-
+  (repeat rewrite denoteUnionOk);
+  (repeat rewrite unionIsOr);
+  (repeat rewrite denoteSingleOk);
+  intuition. 

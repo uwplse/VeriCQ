@@ -22,14 +22,11 @@ Require Import Conjunctive.
 Set Implicit Arguments.
 Open Scope type.
 
-Definition tables := unit.
-Definition R := tt.
-Inductive columns := a | b | c.
-Definition projs := unit.
-Definition aliases := unit.
-Definition x := tt.
-Definition types := unit.
-Definition string := tt.
+Inductive tables : Set := R.
+Inductive columns : Set := a | b | c.
+Inductive projs : Set := w.
+Inductive aliases : Set := x.
+Inductive types : Set := string.
 
 Definition transitiveJoin : CQRewrite.
   refine {|
@@ -69,7 +66,7 @@ Goal denoteCQRewriteEquivalence transitiveJoin.
       intros [] []; apply t0.
       + exact x.
     }
-    simpl; unfold R in *.
+    simpl.
     repeat match goal with
     | h:denoteProj _ _ = denoteProj _ _ |- _ => rewrite h in *; clear h
     | h:_ = t |- _ => rewrite <- h; clear h
@@ -90,7 +87,7 @@ Goal denoteCQRewriteEquivalence transitiveJoin.
       intros [] []; apply t0.
       + exact x.
     }
-    simpl; unfold R in *.
+    simpl.
     repeat match goal with
     | h:denoteProj _ _ = denoteProj _ _ |- _ => rewrite h in *; clear h
     | h:_ = t |- _ => rewrite <- h; clear h
@@ -108,10 +105,39 @@ Goal denoteCQRewriteEquivalence transitiveJoin.
     + reflexivity.
 Qed.
 
-Global Instance fullColumns : Full columns.
-  refine {| full := [a;b;c] |}; fullIndList.
-Defined.
+Section Full.
+  Context `{S:Basic}.
 
-Global Instance eqDecColumns : eqDec columns.
+  Global Instance fullTables : Full tables.
+    refine {| full := single R |}; fullInductive.
+  Defined.
+  
+  Global Instance fullProjs : Full projs.
+    refine {| full := single w |}; fullInductive.
+  Defined.
+  
+  Global Instance fullAliases : Full aliases.
+    refine {| full := single x |}; fullInductive.
+  Defined.
+
+  Global Instance fullColumns : Full columns.
+    refine {| full := union (single a) (union (single b) (single c)) |}; fullInductive.
+  Defined.
+End Full.
+
+Global Instance eqDecTables : eqDec tables. 
   refine {| eqDecide := _ |}; decide equality.
 Defined.
+
+Global Instance eqDecProjs : eqDec projs. 
+  refine {| eqDecide := _ |}; decide equality.
+Defined.
+
+Global Instance eqDecAliases : eqDec aliases. 
+  refine {| eqDecide := _ |}; decide equality.
+Defined.
+
+Global Instance eqDecColumns : eqDec columns. 
+  refine {| eqDecide := _ |}; decide equality.
+Defined.
+

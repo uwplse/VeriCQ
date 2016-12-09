@@ -23,25 +23,22 @@ Require Import Datatypes.
 Set Implicit Arguments.
 Open Scope type.
 
-(* NOTE, we could define tables as `Inductive tables := R`, but
+(* NOTE, we could define tables etc as `Inductive tables := R`, but
 unfortunately Coq's extraction is broken for inductive types with just
 one constructor in two ways. Some such types (specifically aliases1)
 it simply cannot extract (it fails with an error message), and others
 it extracts incorrectly, such that __ is sometimes called as a function. 
 Another advantage of using unit is that we can automatically infer the
 full and eqdec instances.
+
+UPDATE: The fix is to have these inductive definitions in Set.
 *)
-Definition tables := unit.
-Definition R := tt.
-Definition columns := unit.
-Definition a := tt.
-Definition projs := unit.
-Definition w := tt.
-Inductive aliases0 := x | y.
-Definition aliases1 := unit.
-Definition z := tt.
-Definition types := unit.
-Definition string := tt.
+Inductive tables : Set := R.
+Inductive columns : Set := a.
+Inductive projs : Set := w.
+Inductive aliases0 : Set := x | y.
+Inductive aliases1 : Set := z.
+Inductive types : Set := string.
 
 Definition selfJoin : CQRewrite.
   refine {|
@@ -122,11 +119,38 @@ Goal denoteCQRewriteEquivalence selfJoin.
     + reflexivity.
 Qed.
 
-Global Instance fullAliases0 : Full aliases0.
-  refine {| full := [x;y] |}; fullIndList.
+Section Full.
+  Context `{S:Basic}.
+
+  Global Instance fullTables : Full tables.
+    refine {| full := single R |}; fullInductive.
+  Defined.
+  
+  Global Instance fullProjs : Full projs.
+    refine {| full := single w |}; fullInductive.
+  Defined.
+  
+  Global Instance fullAliases0 : Full aliases0.
+    refine {| full := union (single x) (single y) |}; fullInductive.
+  Defined.
+  
+  Global Instance fullAliases1 : Full aliases1.
+    refine {| full := single z |}; fullInductive.
+  Defined.
+End Full.
+
+Global Instance eqDecTables : eqDec tables. 
+  refine {| eqDecide := _ |}; decide equality.
 Defined.
 
 Global Instance eqDecAliases0 : eqDec aliases0. 
   refine {| eqDecide := _ |}; decide equality.
 Defined.
 
+Global Instance eqDecAliases1 : eqDec aliases1. 
+  refine {| eqDecide := _ |}; decide equality.
+Defined.
+
+Global Instance eqDecColumns : eqDec columns. 
+  refine {| eqDecide := _ |}; decide equality.
+Defined.
