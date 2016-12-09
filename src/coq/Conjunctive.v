@@ -126,7 +126,6 @@ Section FullForall.
   Defined.
 End FullForall.
 
-
 (* potential related work
 http://webdam.inria.fr/Alice/pdfs/Chapter-4.pdf (recommended by Shumo)
 http://www.sciencedirect.com/science/article/pii/S0022000000917136
@@ -149,83 +148,80 @@ Section CQ.
   Variable columnName : SQLType -> TableName -> Type.
   Variable ProjName : Type.
   Variable projType : ProjName -> SQLType.
-
-  Record CQ := {
+  
+  Class CQ := {
     TableAlias : TableName -> Type;
     Access (st:SQLType) := {tn : TableName & (TableAlias tn * columnName st tn)};
     selections : list {st:SQLType & (Access st * Access st)};
-    projection (pn:ProjName) : Access (projType pn)
+    projection (pn:ProjName) : Access (projType pn);
+
+    fullTableAlias `{Basic} tn :> Full (TableAlias tn);
+    eqDecTableAlias tn :> eqDec (TableAlias tn)
   }.
 End CQ.
 
-Record CQRewrite := {
+Class CQRewrite := {
   SQLType : Type;
   TableName : Type;
   columnName : SQLType -> TableName -> Type;
   ProjName : Type;
   projType : ProjName -> SQLType;
-  query0 : CQ columnName projType; 
-  query1 : CQ columnName projType
+  query0 :> CQ columnName projType; 
+  query1 :> CQ columnName projType;
+
+  fullTableName `{Basic} :> Full TableName;
+  fullProjName `{Basic} :> Full ProjName;
+  fullColumnName `{Basic} st tn :> Full (columnName st tn);
+  eqDecTableName :> eqDec TableName;
+  eqDecProjName :> eqDec ProjName;
+  eqDecColumnName st tn :> eqDec (columnName st tn)
 }.
 
 Section Checks.
-  Variable r : CQRewrite.
+  Context `{Search}.
 
-  Context {BA:Basic}.
-  Context {SE:@Search BA}.
-
-  Context `{@Full listSpace (TableName r)}.
-  Context `{forall st tn, @Full BA (columnName r st tn)}.
-  Context `{@Full listSpace (ProjName r)}.
-  Context `{forall tn, @Full BA (TableAlias (query0 r) tn)}.
-  Context `{forall tn, @Full listSpace (TableAlias (query1 r) tn)}.
-
-  Context `{eqDec (TableName r)}.
-  Context `{eqDec (ProjName r)}.
-  Context `{forall st tn, eqDec (columnName r st tn)}.
-  Context `{forall tn, eqDec (TableAlias (query0 r) tn)}.
-  Context `{forall tn, eqDec (TableAlias (query1 r) tn)}.
-
-  Definition Assignment := (forall tn:(TableName r), TableAlias (query1 r) tn -> TableAlias (query0 r) tn).
-   
-  Instance fullAssignment : @Full BA Assignment.
-    unfold Assignment. 
-    refine (_).
-  Defined.
-
-  Definition AccessQ0 := Access (query0 r).
-  Definition AccessQ1 := Access (query1 r).
-
-  Instance eqDecAccessQ1 st : eqDec (AccessQ1 st).
-    unfold Access.
-    refine (_).
-  Defined.
-
-  Definition assignmentAccess {st} (a:Assignment) (ac:AccessQ1 st) : AccessQ0 st.
-      unfold AccessQ0, AccessQ1, Access in *.
+  Section Conjunctive.
+    Context `{r:CQRewrite}.
+  
+    Definition Assignment := (forall tn:TableName, TableAlias (CQ:=query1) tn -> TableAlias (CQ:=query0) tn).
+  
+    Definition assignmentAccess {st} (a:Assignment) (ac:Access (CQ:=query1) st) : Access (CQ:=query0) st.
+      unfold Access in *.
       refine (let tn := ac.1 in _).
       refine (let ta := fst ac.2 in _).
       refine (let cn := snd ac.2 in _).
       refine (tn; (a tn ta, cn)).
-  Defined.
+    Defined.
+  
+    Definition containmentCheck : option Assignment.
+      refine (match search _ with solution a => Some a | _ => None end).
+      refine (all (fun a : Assignment => _)).
+      unfold Assignment in a.
+      refine (if (_:bool) then single a else empty).
+      refine (_ && _).
+      - (* check selection variables are equal *)
+        refine (forallb _  (selections (CQ:=query1))).
+        intros ac.
+        refine (assignmentAccess a (fst ac.2) =? 
+                assignmentAccess a (snd ac.2)).
+      - (* check projection variables are equal *)
+        refine (forallb _ (@full listSpace ProjName _)).
+        intros pn.
+        refine (assignmentAccess a (projection (CQ:=query1) pn) =? 
+                projection (CQ:=query0) pn).
+    Defined.
+  End Conjunctive.
 
-  Definition containmentCheck : Result Assignment.
-    refine (search _).
-    refine (all (fun a : Assignment => _)).
-    unfold Assignment in a.
-    refine (if (_:bool) then single a else empty).
-    refine (_ && _).
-    - (* check selection variables are equal *)
-      refine (forallb _  (selections (query1 r))).
-      intros ac.
-      refine (assignmentAccess a (fst ac.2) =? 
-              assignmentAccess a (snd ac.2)).
-    - (* check projection variables are equal *)
-      refine (forallb _  (full (ProjName r))).
-      intros pn.
-      refine (assignmentAccess a (projection (query1 r) pn) =? 
-              projection (query0 r) pn).
-  Defined.
+  Section Equality.
+    Context `{r:CQRewrite}.
+
+    Definition equalityCheck :=
+      let r' : CQRewrite := {| query0 := query1; query1 := query0 |} in 
+      match containmentCheck (r:=r), containmentCheck (r:=r') with
+      | Some a, Some a' => Some (a, a')
+      | _,_ => None
+      end.
+  End Equality.
 End Checks.
 
 (* it's really ugly that I have to use Parameters, but I don't 
@@ -274,9 +270,9 @@ Section DenoteCQ.
   Definition projSchema : Schema := 
     namedNode ProjName (fun pn => leaf (t (projType pn))).
 
-  Definition fromSchema := namedNode TableName (fun tn => namedNode (TableAlias cq tn) (const (s tn))).
+  Definition fromSchema := namedNode TableName (fun tn => namedNode (TableAlias tn) (const (s tn))).
 
-  Definition access {st} (a : Access cq st) : Column (t st) (Γ ++ fromSchema).
+  Definition access {st} (a : Access st) : Column (t st) (Γ ++ fromSchema).
     unfold Access in a.
     refine (right ⋅ _).
     refine (name (a.1) ⋅ _).
@@ -286,12 +282,12 @@ Section DenoteCQ.
 
   Definition denoteFrom : SQL Γ fromSchema.
     refine (namedProduct (fun tn : TableName => _)).
-    refine (namedProduct (fun _ : TableAlias cq tn => _)).
+    refine (namedProduct (fun _ : TableAlias tn => _)).
     refine (q tn).
   Defined.
 
   Definition denoteSelection : Pred (Γ ++ fromSchema).
-    refine ((fix rec (sels:list _) := _) (selections cq)).
+    refine ((fix rec (sels:list _) := _) (selections (CQ:=cq))).
     refine (match sels with
     | [] => TRUE
     | sel::sels => _ AND rec sels
@@ -302,63 +298,55 @@ Section DenoteCQ.
   Defined.
 
   Definition denoteProjection : Proj (Γ ++ fromSchema) projSchema :=
-     named (fun pn => access (projection cq pn)).
+     named (fun pn => access (projection pn)).
 
   Definition denoteCQ : SQL Γ projSchema :=
     SELECT1 denoteProjection FROM1 denoteFrom WHERE denoteSelection.
 End DenoteCQ.
 
-Definition denoteCQRewriteContainment (r:CQRewrite) : Type.
-  refine (forall (Γ:Schema), _).
-  refine (forall (s:TableName r -> Schema), _).
-  refine (forall (T:SQLType r -> type), _).
-  refine (forall (c:forall (st:SQLType r) (tn:TableName r) (cn:columnName r st tn), Column (T st) (s tn)), _).
-  refine (forall (q:(forall (tn:TableName r), SQL Γ (s tn))), _).
-  refine (forall (g:Tuple Γ) (t:Tuple (projSchema (projType r) T)), (⟦ Γ ⊢ _ : _ ⟧ g t : Prop) -> ⟦ Γ ⊢ _ : _ ⟧ g t : Prop).
-  - refine (denoteCQ s T c q (query0 r)).
-  - refine (denoteCQ s T c q (query1 r)).
-Defined. 
-
-Definition denoteCQRewriteEquivalence (r:CQRewrite) : Type.
-  refine (forall (Γ:Schema), _).
-  refine (forall (s:TableName r -> Schema), _).
-  refine (forall (T:SQLType r -> type), _).
-  refine (forall (c:forall (st:SQLType r) (tn:TableName r) (cn:columnName r st tn), Column (T st) (s tn)), _).
-  refine (forall (q:(forall (tn:TableName r), SQL Γ (s tn))), _).
-  refine (⟦ Γ ⊢ _ : _ ⟧ = ⟦ Γ ⊢ _ : _ ⟧).
-  - refine (denoteCQ s T c q (query0 r)).
-  - refine (denoteCQ s T c q (query1 r)).
-Defined. 
+Section CQRewrite.
+  Context `{r:CQRewrite}.
+  
+  Definition denoteCQRewriteContainment : Type.
+    refine (forall (Γ:Schema), _).
+    refine (forall (s:TableName -> Schema), _).
+    refine (forall (T:SQLType -> type), _).
+    refine (forall (c:forall (st:SQLType) (tn:TableName) (cn:columnName st tn), Column (T st) (s tn)), _).
+    refine (forall (q:(forall (tn:TableName), SQL Γ (s tn))), _).
+    refine (forall (g:Tuple Γ) (t:Tuple (projSchema projType T)), (⟦ Γ ⊢ _ : _ ⟧ g t : Prop) -> ⟦ Γ ⊢ _ : _ ⟧ g t : Prop).
+    - refine (denoteCQ s T c q query0).
+    - refine (denoteCQ s T c q query1).
+  Defined. 
+  
+  Definition denoteCQRewriteEquivalence : Type.
+    refine (forall (Γ:Schema), _).
+    refine (forall (s:TableName -> Schema), _).
+    refine (forall (T:SQLType -> type), _).
+    refine (forall (c:forall (st:SQLType) (tn:TableName) (cn:columnName st tn), Column (T st) (s tn)), _).
+    refine (forall (q:(forall (tn:TableName), SQL Γ (s tn))), _).
+    refine (⟦ Γ ⊢ _ : _ ⟧ = ⟦ Γ ⊢ _ : _ ⟧).
+    - refine (denoteCQ s T c q query0).
+    - refine (denoteCQ s T c q query1).
+  Defined. 
+End CQRewrite.
 
 Section Soundness.
-  Variable r : CQRewrite.
-
-  Context {BA:Basic}.
-  Context {SE:@Search BA}.
-
-  Context `{@Full listSpace (TableName r)}.
-  Context `{forall st tn, @Full BA (columnName r st tn)}.
-  Context `{@Full listSpace (ProjName r)}.
-  Context `{forall tn, @Full BA (TableAlias (query0 r) tn)}.
-  Context `{forall tn, @Full listSpace (TableAlias (query1 r) tn)}.
-
-  Context `{eqDec (TableName r)}.
-  Context `{eqDec (ProjName r)}.
-  Context `{forall st tn, eqDec (columnName r st tn)}.
-  Context `{forall tn, eqDec (TableAlias (query0 r) tn)}.
-  Context `{forall tn, eqDec (TableAlias (query1 r) tn)}.
-  
+  Context `{Search}.
+  Context `{r:CQRewrite}.
+ 
   Definition containmentSpec : option {a |
-      (forall ac : {st : SQLType r & (AccessQ1 r st * AccessQ1 r st)}, 
-        List.In ac (selections (query1 r)) -> 
+      (forall ac : {st : SQLType & (Access (CQ:=query1) st * Access (CQ:=query1) st)}, 
+        List.In ac (selections (CQ:=query1)) -> 
           assignmentAccess a (fst ac.2) = assignmentAccess a (snd ac.2))
       /\
-      (forall (pn:ProjName r), 
-          assignmentAccess a (projection (query1 r) pn) = projection (query0 r) pn)
+      (forall (pn:ProjName), 
+          assignmentAccess a (projection (CQ:=query1) pn) = projection (CQ:=query0) pn)
     }.
-    destruct (containmentCheck r) as [a|] eqn:h; [apply Some|exact None].
+    destruct containmentCheck as [a|] eqn:h; [apply Some|exact None].
     refine (exist _ a _).
     unfold containmentCheck in *.
+    break_match; [|congruence]. 
+    inversion h; subst; clear h; rename Heqr0 into h.
     apply searchSolution in h.
     rewrite denoteAllOk in h.
     destruct h as [a' h].
@@ -385,17 +373,20 @@ Section Soundness.
       break_match; intuition.
   Defined.
 
-  Definition containmentSound : option (denoteCQRewriteContainment r).
+  Definition containmentSound : option denoteCQRewriteContainment.
     destruct containmentSpec as [[a [h h']]|]; [apply Some|exact None].
     unfold denoteCQRewriteContainment.
     simpl.
     intros Γ s T c q g t [t0 [[select from] project]].
-    refine (ex_intro _ (fun tn ta => t0 tn (a tn ta)) _).
+    simple refine (ex_intro _ _ _). {
+      intros tn ta.
+      refine (t0 tn (a tn ta)).
+    }
     constructor; [constructor|].
     - (* selection variables are correct *)
       clear h'.
       unfold denoteSelection.
-      induction (selections (query1 r)) as [|sel sels rec].
+      induction (selections (CQ:=query1)) as [|sel sels rec].
       + simpl.
         trivial.
       + simpl.

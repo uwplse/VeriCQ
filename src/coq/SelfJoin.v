@@ -40,7 +40,51 @@ Inductive aliases0 : Set := x | y.
 Inductive aliases1 : Set := z.
 Inductive types : Set := string.
 
-Definition selfJoin : CQRewrite.
+Section Full.
+  Context `{S:Basic}.
+
+  Global Instance fullTables : Full tables.
+    refine {| full := single R |}; fullInductive.
+  Defined.
+  
+  Global Instance fullProjs : Full projs.
+    refine {| full := single w |}; fullInductive.
+  Defined.
+
+  Global Instance fullColumns : Full columns.
+    refine {| full := single a |}; fullInductive.
+  Defined.
+  
+  Global Instance fullAliases0 : Full aliases0.
+    refine {| full := union (single x) (single y) |}; fullInductive.
+  Defined.
+  
+  Global Instance fullAliases1 : Full aliases1.
+    refine {| full := single z |}; fullInductive.
+  Defined.
+End Full.
+
+Instance eqDecTables : eqDec tables. 
+  refine {| eqDecide := _ |}; decide equality.
+Defined.
+
+Instance eqDecProjs : eqDec projs. 
+  refine {| eqDecide := _ |}; decide equality.
+Defined.
+
+Instance eqDecColumns : eqDec columns. 
+  refine {| eqDecide := _ |}; decide equality.
+Defined.
+
+Instance eqDecAliases0 : eqDec aliases0. 
+  refine {| eqDecide := _ |}; decide equality.
+Defined.
+
+Instance eqDecAliases1 : eqDec aliases1. 
+  refine {| eqDecide := _ |}; decide equality.
+Defined.
+
+Instance selfJoin : CQRewrite.
   refine {|
     SQLType := types;
     TableName := tables;
@@ -58,7 +102,7 @@ Definition selfJoin : CQRewrite.
   |}.
 Defined.
 
-Goal denoteCQRewriteEquivalence selfJoin.
+Goal denoteCQRewriteEquivalence.
   unfold selfJoin.
   unfold denoteCQRewriteEquivalence.
   simpl.
@@ -118,39 +162,3 @@ Goal denoteCQRewriteEquivalence selfJoin.
       end.
     + reflexivity.
 Qed.
-
-Section Full.
-  Context `{S:Basic}.
-
-  Global Instance fullTables : Full tables.
-    refine {| full := single R |}; fullInductive.
-  Defined.
-  
-  Global Instance fullProjs : Full projs.
-    refine {| full := single w |}; fullInductive.
-  Defined.
-  
-  Global Instance fullAliases0 : Full aliases0.
-    refine {| full := union (single x) (single y) |}; fullInductive.
-  Defined.
-  
-  Global Instance fullAliases1 : Full aliases1.
-    refine {| full := single z |}; fullInductive.
-  Defined.
-End Full.
-
-Global Instance eqDecTables : eqDec tables. 
-  refine {| eqDecide := _ |}; decide equality.
-Defined.
-
-Global Instance eqDecAliases0 : eqDec aliases0. 
-  refine {| eqDecide := _ |}; decide equality.
-Defined.
-
-Global Instance eqDecAliases1 : eqDec aliases1. 
-  refine {| eqDecide := _ |}; decide equality.
-Defined.
-
-Global Instance eqDecColumns : eqDec columns. 
-  refine {| eqDecide := _ |}; decide equality.
-Defined.

@@ -13,8 +13,8 @@ Require Import Datatypes.
 Set Implicit Arguments.
 
 Definition vericq := (
-  containmentSound selfJoin,
-  containmentSound transitiveJoin
+  containmentSound (r:=selfJoin),
+  containmentSound (r:=transitiveJoin)
 ).
     
 Extraction Language Scheme.

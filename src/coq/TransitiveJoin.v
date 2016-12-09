@@ -28,7 +28,43 @@ Inductive projs : Set := w.
 Inductive aliases : Set := x.
 Inductive types : Set := string.
 
-Definition transitiveJoin : CQRewrite.
+Section Full.
+  Context `{S:Basic}.
+
+  Global Instance fullTables : Full tables.
+    refine {| full := single R |}; fullInductive.
+  Defined.
+  
+  Global Instance fullProjs : Full projs.
+    refine {| full := single w |}; fullInductive.
+  Defined.
+  
+  Global Instance fullColumns : Full columns.
+    refine {| full := union (single a) (union (single b) (single c)) |}; fullInductive.
+  Defined.
+
+  Global Instance fullAliases : Full aliases.
+    refine {| full := single x |}; fullInductive.
+  Defined.
+End Full.
+
+Instance eqDecTables : eqDec tables. 
+  refine {| eqDecide := _ |}; decide equality.
+Defined.
+
+Instance eqDecProjs : eqDec projs. 
+  refine {| eqDecide := _ |}; decide equality.
+Defined.
+
+Instance eqDecColumns : eqDec columns. 
+  refine {| eqDecide := _ |}; decide equality.
+Defined.
+
+Instance eqDecAliases : eqDec aliases. 
+  refine {| eqDecide := _ |}; decide equality.
+Defined.
+
+Instance transitiveJoin : CQRewrite.
   refine {|
     SQLType := types;
     TableName := tables;
@@ -48,7 +84,7 @@ Definition transitiveJoin : CQRewrite.
   |}.
 Defined.
 
-Goal denoteCQRewriteEquivalence transitiveJoin.
+Goal denoteCQRewriteEquivalence.
   unfold transitiveJoin.
   unfold denoteCQRewriteEquivalence.
   simpl.
@@ -104,40 +140,3 @@ Goal denoteCQRewriteEquivalence transitiveJoin.
       end.
     + reflexivity.
 Qed.
-
-Section Full.
-  Context `{S:Basic}.
-
-  Global Instance fullTables : Full tables.
-    refine {| full := single R |}; fullInductive.
-  Defined.
-  
-  Global Instance fullProjs : Full projs.
-    refine {| full := single w |}; fullInductive.
-  Defined.
-  
-  Global Instance fullAliases : Full aliases.
-    refine {| full := single x |}; fullInductive.
-  Defined.
-
-  Global Instance fullColumns : Full columns.
-    refine {| full := union (single a) (union (single b) (single c)) |}; fullInductive.
-  Defined.
-End Full.
-
-Global Instance eqDecTables : eqDec tables. 
-  refine {| eqDecide := _ |}; decide equality.
-Defined.
-
-Global Instance eqDecProjs : eqDec projs. 
-  refine {| eqDecide := _ |}; decide equality.
-Defined.
-
-Global Instance eqDecAliases : eqDec aliases. 
-  refine {| eqDecide := _ |}; decide equality.
-Defined.
-
-Global Instance eqDecColumns : eqDec columns. 
-  refine {| eqDecide := _ |}; decide equality.
-Defined.
-
