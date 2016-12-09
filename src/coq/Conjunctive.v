@@ -28,7 +28,14 @@ Notation "x .2" := (projT2 x) (at level 3, format "x '.2'").
 Inductive Maybe (P : Prop) : Set :=
 | unknown : Maybe P
 | holds : P -> Maybe P.
-  
+
+Definition getHolds {P p} (m:Maybe P) (h:m = holds p) : P.
+  destruct m.
+  - discriminate h.
+  - apply p.
+Defined.
+Arguments getHolds {_ _} _ _.
+
 Coercion sumBoolToBool {P Q} (pq:{P} + {Q}) : bool :=
   if pq then Datatypes.true else Datatypes.false.
 

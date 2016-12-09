@@ -162,3 +162,10 @@ Goal denoteCQRewriteEquivalence.
       end.
     + reflexivity.
 Qed.
+
+Goal denoteCQRewriteEquivalence.
+  refine (getHolds equivalenceVerifier _).
+  compute.
+  reflexivity.
+Qed.
+
