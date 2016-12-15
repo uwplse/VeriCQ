@@ -1,0 +1,42 @@
+ASPELL_CMDS=\
+	--add-tex-command="DeclareFixedFont pppppp" \
+	--add-tex-command="lstinline p" \
+	--add-tex-command="dynamic pp" \
+	--add-tex-command="clearfield p" \
+	--add-tex-command="codeid p" \
+	--add-tex-command="cref p" \
+	--add-tex-command="Cref p" \
+	--add-tex-command="autoref p" \
+	--add-tex-command='begin pp' \
+	--add-tex-command='bibliography p' \
+	--add-tex-command='bibliographystyle p' \
+	--add-tex-command='citeauthor p' \
+	--add-tex-command='color p' \
+	--add-tex-command='definecolor ppp' \
+	--add-tex-command='eqref p' \
+	--add-tex-command='fvset p' \
+	--add-tex-command='hypersetup p' \
+	--add-tex-command='lstset p' \
+	--add-tex-command='mathit p' \
+	--add-tex-command='mathrm p' \
+	--add-tex-command='newcommand pp' \
+	--add-tex-command='providecommand pp' \
+	--add-tex-command='renewcommand pp' \
+	--add-tex-command='shortcite p' \
+	--add-tex-command='special p' \
+	--add-tex-command='texttt p' \
+	--add-tex-command='mathtt p' \
+	--add-tex-command='mytt p' \
+	--add-tex-command='usetikzlibrary p' \
+	--add-tex-command='Crefname ppp' \
+	--add-tex-command='DeclareMathOperator pp' \
+	--add-tex-command='PassOptionsToPackage pp' \
+	--add-tex-command='VerbatimInput p' \
+
+spell:
+	@ for i in *.tex; do aspell -t $(ASPELL_CMDS) -p ./aspell.words -c $$i; done
+	@ for i in *.tex; do scripts/double.pl $$i; done
+	@ for i in *.tex; do scripts/abbrv.pl  $$i; done
+	@ bash scripts/hyphens.sh *.tex
+	@ ( head -1 aspell.words ; tail -n +2 aspell.words | LC_ALL=C sort ) > aspell.words~
+	@ mv aspell.words~ aspell.words

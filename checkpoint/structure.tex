@@ -1,0 +1,192 @@
+  Many effective verification tools build on automated solvers.
+  %
+  These tools reduce problems in an application domain (ranging from
+  data-race detection to compiler optimization validation) to the domain of
+  a highly optimized solver like Z3.
+  %
+  However, tool builders rarely formally verify these reductions --- that
+  the low-level results from the solver ensure the desired high-level
+  property.
+  %
+  This leaves the soundness of the tool in question.
+
+  A previous paper presented \SpaceSearch, a library to verify such tools within a
+  proof assistant.
+  %
+  A user builds their solver-aided tool in Coq, using operations from the
+  \SpaceSearch library to call a solver.
+  %
+  The user then verifies that the low-level results from solver calls can
+  be lifted to the desired high-level properties.
+  %
+  Once verified, the tool can be extracted (e.g. to Haskell or Racket)
+  where the \SpaceSearch interface is instantiated with an efficient
+  implementation that uses SMT solver techniques (e.g. Smten or Rosette).
+
+We will evaluate \SpaceSearch by building and verifying an
+SMT based tool that checks the correctness of a particular subset of
+SQL rewrite rules, and will formally verify it against a semantics of
+SQL called \sem~\cite{hottsql}.
+
+\begin{figure}
+\begin{small}
+\textbf{Rewrite Rule}:
+\begin{flalign*}
+\quad\; & \SelectFromWhere{\Star}{(\UNIONALL{R}{S})}{\pred} \quad \equiv & \\
+        & \UNIONALL{(\SelectFromWhere{\Star}{R}{\pred})} & \\
+        & {(\SelectFromWhere{\Star}{S}{\pred})} &
+\end{flalign*}
+
+\textbf{\sem Denotation}:
+\begin{flalign*}
+% \Rightarrow & \lambdaFn{t}{\denote{\UNIONALL{A}{B}} \; t \times \denote{\pred} \; t} \quad= & \\ 
+% %
+% & \lambdaFn{t}{\denote{\SelectFromWhere{\Star}{A}{\pred}} \; t +
+%                \denote{\SelectFromWhere{\Star}{B}{\pred}} \; t} & \\
+% %%
+\Rightarrow & \lambdaFn{t}{(\denote{R} \; t + \denote{S} \; t) \times \denote{\pred} \; t}
+%
+\equiv & \\
+%
+& \lambdaFn{t}{\denote{R} \; t \times \denote{\pred} \; t + \denote{S} \; t \times \denote{\pred} \; t} &
+%
+\end{flalign*}
+
+\textbf{\sem Proof}:
+Apply distributivity of $\times$ over $+$.
+\end{small}
+\caption{Proving a rewrite rule using \sem.
+Recall that \texttt{UNION ALL} means bag-union in SQL, which in \sem
+is translated to addition of tuple multiplicities in the two input relations.
+}
+\label{fig:union-slct}
+\end{figure}
+
+The basic datatype in SQL is a {\em relation}, 
+which is defined as bag of \emph{tuples}.
+Each tuple in the bag must be of the same type, which
+is defined by a relation's {\em schema}.
+The schema defines the number of elements per tuple, 
+and the name and type of each element.
+
+A SQL query takes several input
+relations and returns a new output relation. Consider, for example,
+a relation $R$, which stores a company's employees and their age. 
+$R$ has schema $\{\nameCol : \sqlString; \; \texttt{age} : \sqlInt)\}$
+and value $\{(``Alice'', 25),(``Bob'',40),(``Bob'',50)\}$.
+%
+The SQL query that selects all employees without their age is:
+%
+\begin{flalign*}
+  \SelectFrom{\nameCol}{R}
+\end{flalign*}
+%
+It returns the bag $\{(``Alice''),(``Bob''),(``Bob'')\}$.  
+
+Green \etal's semantics~\cite{k-relations} represent relations as functions that
+map every tuple to a natural number that indicates how many times it appears
+in the relation. With this semantics,
+all queries can be defined in terms of operations on the natural numbers.
+We use the notation $\denote{q}$ to define the meaning of
+(denote) the SQL query $q$. Consider, for example:
+
+\begin{align*}
+  & \denote{\UNIONALL{q_1}{q_2}} =  \lambdaFn{\tuple}{\denote{q_1} \; \tuple+\denote{q_2} \; \tuple} \\ 
+  & \denote{\SelectFromWhere{\Star}{q_1}{\pred}} = \lambdaFn{\tuple}{\denote{q_2} \; \tuple \times \denote{\pred} \; \tuple} \\
+\end{align*}
+
+The query $\UNIONALL{q_1}{q_2}$ combines 
+the tuples in the relation returned by the query $q_1$ with 
+the tuples in the relation returned by the query $q_2$ (without removing duplicates).
+The result is a relation,
+and thus a function, that maps every tuple $\tuple$ to the number of times 
+that tuples appears in $q_1$ plus the number of times that the tuple appears in $q_2$.
+
+The query $\SelectFromWhere{\Star}{q}{\pred}$ removes all the tuples, from the
+relation returned by the query $q$ for which the predicate $\pred$ does not hold. We denote the predicate
+as a function $\denote{\pred}$ that maps a tuple to $1$ if the predicate holds,
+and $0$ otherwise. The query multiplies the relation with the
+predicate to achieve the desired effect (i.e. $n \times 1 = n$ and $n \times 0 = 0$).
+
+Relations, like the relation $R$ from the first example, can be used as
+a based case when nesting the queries defined above.
+
+To prove that two
+SQL queries are equal one has to prove that, forall tuples, the two natural number expressions
+are equal. 
+% which is much simpler than the inductive proof required under the list semantics.
+For example, Fig.~\ref{fig:union-slct}
+shows how we can prove that selections distribute over unions, by
+reducing it to the distributivity of $\times$ over $+$. 
+% while
+% Fig.~\ref{fig:magic-distinct} shows the proof of the equivalence for
+% $\texttt{Q2} \equiv \texttt{Q3}$.
+
+To handle challenges with the denotation of the SQL operation that performs projection,
+\sem replaces the natural number in the relation denotation with a homotopic type~\cite{hott-book}, where
+the cardinality of the type represents the number of times the tuples appears in the relation. 
+%
+In this model, the number 
+$0$ is the empty type $\zero$,
+$1$ is the unit type $\one$,
+multiplication is the product type $\times$, and
+addition is the sum type $+$.
+
+
+\begin{figure*}
+\centering
+\begin{tabular}{|l|l|l|l|l|} \hline
+ & Containment (Set)  & Containment (Bag) & Equivalence (Set) &  Equivalence (Bag) \\ \hline 
+Conjunctive Queries & NP-Complete \cite{sql-hardness-cq-set} & Open & NP-Complete \cite{sql-hardness-cq-set}  &  Graph Isomorphism \cite{sql-hardness-cq-bag-equality} \\ \hline
+% 
+Union of Conjunctive Queries & NP-Complete \cite{sql-hardness-cqunion-set}  & Undecidable \cite{sql-hardness-cqunion-bag-containment}  & NP-Complete \cite{sql-hardness-cqunion-set}  & Open \\ \hline 
+%
+Conjunctive Query with $\neq$, $\geq$, and $\leq$ & 
+$\Pi_2^p$-Complete \cite{sql-hardness-cqex-set} & Undecidable  \cite{sql-hardness-cqex-bag} &  $\Pi_2^p$-Complete  \cite{sql-hardness-cqex-set}  & Undecidable \cite{sql-hardness-cqex-bag}  \\ \hline
+%
+First Order (SQL) Queries & Undecidable \cite{sql-hardness-first-order} & Undecidable  \cite{sql-hardness-first-order} & Undecidable  \cite{sql-hardness-first-order} & Undecidable  \cite{sql-hardness-first-order} \\ \hline
+\end{tabular}
+\caption{Complexities of Query Containment and Equivalence.}
+\label{fig:complexity}
+\end{figure*} 
+
+The equivalence of two SQL queries is in general
+undecidable~\cite{sql-hardness-first-order}. Figure~\ref{fig:complexity}
+shows the complexities of deciding containment and equivalence of
+subclasses of SQL.
+%
+The most well-known subclass are conjunctive queries, which are of the
+form \texttt{SELECT DISTINCT $p$ FROM $q$ WHERE $b$}, where $p$ is a
+sequence of arbitrarily many attribute projections, $q$ is the cross
+product of arbitrarily many input relations, and $b$ is a conjunct
+consisting of arbitrarily many equality predicates between attribute
+projections.
+%
+The \sem paper provides a tactic to automatically prove
+the equivalence of conjunctive queries in \sem, using Coq's support
+for automating deductive reasoning (with \emph{Ltac}).
+
+However, this approach has two major drawbacks. 
+1) The tactic is slow because it performs brute-force search over an exponentially large space, and
+   because it is implemented in the high-level interpreted Ltac language.
+2) The tactic is supposed to be a decision procedure (it only fails if
+   the two queries are not equivalent), but there is no proof of this
+   property.
+
+We propose to re-implement this tactic as a Coq decision procedure (a
+function that either returns a proof that the two queries are equal,
+or a proof that they are not equal) using the \SpaceSearch
+framework, which will eliminate the drawbacks of the tactic approach:
+1) the decision procedure will be fast as it can be extracted to an SMT query, and
+2) it will be verified to be a decision procedure.
+%
+We can potentially also implement a decision procedure for other
+subclasses mentioned in~\ref{fig:complexity} that are NP-Complete and
+that can thus be reduced to a SAT problem.
+
+By the first checkpoint (November 21), we plan to have implemented the 
+algorithm to check the equivalence of conjunctive queries.
+
+By the second checkpoint (December 2), we plan to have verified the 
+algorithm to check the equivalence of conjunctive queries.
+
