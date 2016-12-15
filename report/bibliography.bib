@@ -1,0 +1,1165 @@
+Generals
+========
+
+# General BGP
+
+1.  why-the-internet-only-just-works
+2.  balakrishnan-bgp-overview
+3.  rfc4271 
+
+# Policies and Security
+
+4.  rexford-bgp-issues-10
+5.  goldberg-routing-policies
+6.  bgp-market-deployment
+
+# BGP Theory
+
+7.  spp
+8.  gaorexford
+9.  spp-turing-complete
+10. bgp-commercial-agreements
+11. isabelle-bgp
+
+# BGP Tools
+
+12. rcc
+13. borderguard
+14. batfish
+15. propage
+16. poiroot
+
+# Verfication Space
+
+17. header-space-analysis
+18. dynamic-network-beliefs
+
+# SDN
+
+19. netcore
+20. netkat
+21. verified-netcore
+22. vericon
+23. sdn-verification-scale
+
+# Solvers
+
+24. rosette
+25. rosette-onward
+26. xcert
+
+# Misc
+
+27. negotiation-routing
+28. negotiation-routing-hotnets
+29. consesus-routing
+
+Bagpipe
+=======
+
+@techreport{bagpipe-techreport,
+  title = {Bagpipe: Verified BGP Configuration Checking},
+  author = {Konstantin Weitz and Dough Woos and Emina Torlak and Michael D. Ernst and Arvind Krishnamurthy and Zachary Tatlock},
+  institution = {University of Washington},
+  year = {2016},
+  url = {https://www.cs.washington.edu/public_files/grad/tech_reports/UW-CSE-16-01-01.pdf},
+}
+
+@inproceedings{bagpipe,
+  title = {Scalable Verification of Border Gateway Protocol Configurations with an SMT Solver},
+  author = {Konstantin Weitz and Dough Woos and Emina Torlak and Michael D. Ernst and Arvind Krishnamurthy and Zachary Tatlock},
+  booktitle = {OOPSLA},
+  year = {2016},
+}
+
+Software Defined Networking
+===========================
+
+@inproceedings{verified-netcore,
+  author = {Guha, Arjun and Reitblatt, Mark and Foster, Nate},
+  title = {Machine-verified Network Controllers},
+  booktitle = {PLDI},
+  series = {PLDI '13},
+  year = {2013},
+  isbn = {978-1-4503-2014-6},
+  location = {Seattle, Washington, USA},
+  pages = {483--494},
+  numpages = {12},
+  doi = {10.1145/2491956.2462178},
+  acmid = {2462178},
+  publisher = {ACM},
+  keywords = {coq, domain-specific languages, formal verification, frenetic, netcore, openflow, software-defined networking},
+}
+
+@inproceedings{netcore,
+  author = {Monsanto, Christopher and Foster, Nate and Harrison, Rob and Walker, David},
+  title = {A Compiler and Run-time System for Network Programming Languages},
+  booktitle = {POPL},
+  year = {2012},
+  isbn = {978-1-4503-1083-3},
+  location = {Philadelphia, PA, USA},
+  pages = {217--230},
+  numpages = {14},
+  doi = {10.1145/2103656.2103685},
+  acmid = {2103685},
+  publisher = {ACM},
+  keywords = {domain specific languages, frenetic, network programming languages, openflow, software-defined networking},
+}
+
+@inproceedings{frenetic,
+    author = {Foster, Nate and Harrison, Rob and Freedman, Michael J. and Monsanto, Christopher and Rexford, Jennifer and Story, Alec and Walker, David},
+    title = {Frenetic: A Network Programming Language},
+    booktitle = {ICFP},
+    series = {ICFP '11},
+    year = {2011},
+    isbn = {978-1-4503-0865-6},
+    location = {Tokyo, Japan},
+    pages = {279--291},
+    numpages = {13},
+    doi = {10.1145/2034773.2034812},
+    acmid = {2034812},
+    publisher = {ACM},
+    keywords = {domain-specific languages, functional reactive programming, network programming languages, openflow},
+} 
+
+@inproceedings{netkat,
+  author = {Anderson, Carolyn Jane and Foster, Nate and Guha, Arjun and Jeannin, Jean-Baptiste and Kozen, Dexter and Schlesinger, Cole and Walker, David},
+  title = {{NetKAT}: Semantic Foundations for Networks},
+  booktitle = {POPL},
+  year = {2014},
+  doi = {10.1145/2535838.2535862},
+  location = {San Diego, California, USA},
+  pages = {113--126},
+  numpages = {14},
+  acmid = {2535862},
+  publisher = {ACM},
+  keywords = {domain-specific languages, frenetic, kleene algebra with tests, netkat, network programming languages, software-defined networking},
+} 
+
+@inproceedings{vericon,
+  author = {Ball, Thomas and Bj{\o}rner, Nikolaj and Gember, Aaron and Itzhaky, Shachar and Karbyshev, Aleksandr and Sagiv, Mooly and Schapira, Michael and Valadarsky, Asaf},
+  title = {{VeriCon}: Towards Verifying Controller Programs in Software-defined Networks},
+  booktitle = {PLDI},
+  year = {2014},
+  location = {Edinburgh, United Kingdom},
+  pages = {282--293},
+  numpages = {12},
+  doi = {10.1145/2594291.2594317},
+  acmid = {2594317},
+  publisher = {ACM},
+  keywords = {Hoare-style verification, software-defined networks},
+}
+
+@inproceedings{sdn-verification-scale,
+  author = {Dobrescu, Mihai and Argyraki, Katerina},
+  title = {Software Dataplane Verification},
+  booktitle = {NSDI},
+  year = {2014},
+  location = {Seattle, WA},
+  pages = {101--114},
+  numpages = {14},
+  acmid = {2616459},
+  publisher = {USENIX Association},
+  url = {https://dl.acm.org/citation.cfm?id=2616459}
+} 
+
+@inproceedings{surgery,
+  author = {Plotkin, Gordon D. and Bj{\o}rner, Nikolaj and Lopes, Nuno P. and Rybalchenko, Andrey and Varghese, George},
+  title = {Scaling Network Verification Using Symmetry and Surgery},
+  booktitle = {POPL},
+  year = {2016},
+  isbn = {978-1-4503-3549-2},
+  location = {St. Petersburg, FL, USA},
+  pages = {69--83},
+  numpages = {15},
+  doi = {10.1145/2837614.2837657},
+  acmid = {2837657},
+  publisher = {ACM},
+  keywords = {Network Verification, Semantics, Symmetries},
+} 
+
+BGP Theory
+==========
+
+@article{spp,
+  author = {Griffin, Timothy G. and Shepherd, F. Bruce and Wilfong, Gordon},
+  title = {The Stable Paths Problem and Interdomain Routing},
+  journal = {TON},
+  issue_date = {April 2002},
+  volume = {10},
+  month = apr,
+  year = {2002},
+  issn = {1063-6692},
+  pages = {232--243},
+  numpages = {12},
+  url = {http://dl.acm.org/citation.cfm?id=508325.508332},
+  acmid = {508332},
+  publisher = {IEEE Press},
+  keywords = {BGP, Border Gateway Protocol, interdomain routing, internet routing, path vector protocols, stable routing},
+} 
+
+
+@inproceedings{simple-path-vector-protocol, 
+  author={T. G. Griffin and F. B. Shepherd and G. Wilfong}, 
+  booktitle={ICNP}, 
+  title={Policy disputes in path-vector protocols}, 
+  year={1999}, 
+  pages={21-30}, 
+  keywords={graph theory;telecommunication network routing;transport protocols;BGP routing messages;BGP safety;Internet;SPVP;autonomous systems;border gateway protocol;dispute cycle;distance-based metrics;interdomain routing protocol;path-vector protocols;policy disputes;policy-based metrics;routing policies;simple path vector protocol;Hip;Reactive power;Routing protocols;Stability;Wheels}, 
+  doi={10.1109/ICNP.1999.801912}, 
+  ISSN={1092-1648}, 
+  month=oct,
+}
+
+@inproceedings{metarouting,
+  author = {Griffin, Timothy G. and Sobrinho, Jo\"{a}o Lu\'{\i}s},
+  title = {Metarouting},
+  booktitle = {SIGCOMM},
+  series = {SIGCOMM'05},
+  year = {2005},
+  isbn = {1-59593-009-4},
+  location = {Philadelphia, Pennsylvania, USA},
+  pages = {1--12},
+  numpages = {12},
+  doi = {10.1145/1080091.1080094},
+  acmid = {1080094},
+  publisher = {ACM},
+  keywords = {algebraic routing, path algebras, routing protocols},
+}
+
+@inproceedings{spp-turing-complete,
+  author = {Marco Chiesa and Luca Cittadini and Laurent Vanbever and Stefano Vissicchio and Giuseppe {Di Battista}},
+  booktitle= {ICNP},
+  title={Using routers to build logic circuits: How powerful is BGP?}, 
+  year={2013}, 
+  pages={1-10}, 
+  keywords={Turing machines;computational complexity;internetworking;logic circuits;logic gates;network servers;BGP configurations;arbitrary logic circuits;border gateway protocol;clocks;computational complexity;flip-flops;logic gates;routing protocols;turing machine;Clocks;Integrated circuit modeling;Logic circuits;Logic gates;Peer-to-peer computing;Routing;Routing protocols}, 
+  doi={10.1109/ICNP.2013.6733584}, 
+  ISSN={1092-1648}, 
+  month=oct,
+}
+
+@inproceedings{gaorexford,
+  acmid = {339426},
+  author = {Gao, Lixin and Rexford, Jennifer},
+  booktitle = {SIGMETRICS},
+  doi = {10.1145/339331.339426},
+  isbn = {1-58113-194-1},
+  location = {Santa Clara, California, USA},
+  numpages = {11},
+  pages = {307--317},
+  publisher = {ACM},
+  series = {SIGMETRICS},
+  title = {Stable {Internet} Routing Without Global Coordination},
+  year = {2000},
+}
+
+@inproceedings{gaorexford-spp,
+  author={Lixin Gao and T. G. Griffin and J. Rexford}, 
+  booktitle={INFOCOM},
+  title={Inherently safe backup routing with BGP}, 
+  year={2001}, 
+  volume={1}, 
+  pages={547-556 vol.1}, 
+  doi={10.1109/INFCOM.2001.916777}, 
+  issn={0743-166X}, 
+}
+
+@inproceedings{spurious-updates, 
+  author={M. Suchara and A. Fabrikant and J. Rexford}, 
+  booktitle={INFOCOM}, 
+  title={BGP safety with spurious updates}, 
+  year={2011}, 
+  pages={2966-2974}, 
+  keywords={filtering theory;internetworking;routing protocols;telecommunication security;BGP behavior;BGP implementation features;BGP safety;BGP system;DPVP;MRAI timers;dispute wheels;global routing;intra-router features;less-preferred routes;long-term divergence;necessary and sufficient condition;route flap damping;safety under filtering;short-term spurious behavior;spurious announcements;spurious updates;stable routing;Blades;Convergence;Oscillators;Peer to peer computing;Routing;Safety;Wheels}, 
+  doi={10.1109/INFCOM.2011.5935137}, 
+  ISSN={0743-166X}, 
+  month=apr
+}
+ 
+@inproceedings{isabelle-bgp,
+  acmid = {1655071},
+  author = {Voellmy, Andreas R.},
+  booktitle = {SafeConfig},
+  doi = {10.1145/1655062.1655071},
+  isbn = {978-1-60558-778-3},
+  keywords = {bgp, interdomain routing, isabelle/hol, languages, verification},
+  location = {Chicago, Illinois, USA},
+  numpages = {8},
+  pages = {37--44},
+  publisher = {ACM},
+  series = {SafeConfig '09},
+  title = {Proof of an interdomain policy: a load-balancing multi-homed network},
+  year = {2009},
+}
+
+@incollection{maude,
+  author = {Wang, Anduo and Talcott, Carolyn and Jia, Limin and Loo, BoonThau and Scedrov, Andre},
+  booktitle = {FORTE},
+  doi = {10.1007/978-3-642-21461-5_22},
+  editor = {Bruni, Roberto and Dingel, Juergen},
+  isbn = {978-3-642-21460-8},
+  language = {English},
+  pages = {334-348},
+  publisher = {Springer Berlin Heidelberg},
+  series = {Lecture Notes in Computer Science},
+  title = {Analyzing {BGP} Instances in {Maude}},
+  volume = {6722},
+  year = {2011},
+}
+
+@inproceedings{fsr,
+  author = {Anduo Wang and Limin Jia and Wenchao Zhou and Yiqing Ren and Boon Thau Loo and Jennifer Rexford and Vivek Nigam and Andre Scedrov and Carolyn Talcott},
+  title = {FSR: Formal Analysis and Implementation Toolkit for Safe Inter-domain Routing},
+  booktitle = {SIGCOMM},
+  series = {SIGCOMM '11},
+  year = {2011},
+  isbn = {978-1-4503-0797-0},
+  location = {Toronto, Ontario, Canada},
+  pages = {440--441},
+  numpages = {2},
+  doi = {10.1145/2018436.2018510},
+  acmid = {2018510},
+  publisher = {ACM},
+  keywords = {formal verification, formally safe routing, safety analysis},
+} 
+
+@inproceedings{fvn,
+  author = {Anduo Wang and Limin Jia and Changbin Liu and
+            Boon Thau Loo and Oleg Sokolsky and Prithwish Basu},
+  title = {Formally Verifiable Networking},
+  url = {http://repository.upenn.edu/cis_papers/747/},
+  booktitle = {HotNets},
+  year = 2009,
+  month = oct,
+  address = {New York City, NY},
+}
+
+BGP Tools
+=========
+
+@inproceedings{rcc,
+  acmid = {1251207},
+  address = {Berkeley, CA, USA},
+  author = {Feamster, Nick and Balakrishnan, Hari},
+  booktitle = {NSDI},
+  numpages = {14},
+  pages = {43--56},
+  publisher = {USENIX Association},
+  title = {Detecting {BGP} Configuration Faults with Static Analysis},
+  year = {2005},
+  url = {https://dl.acm.org/citation.cfm?id=1251207}
+}
+
+@inproceedings{propane,
+  author = {Ryan Beckett and Ratul Mahajan and Todd Millstein and Jitu Padhye and David Walker},
+  title = {Don't Mind the Gap: Bridging Network-wide Objectives and Device-level Configurations},
+  booktitle = {SIGCOMM},
+  year = 2016,
+  url = {http://web.cs.ucla.edu/~todd/research/sigcomm16.pdf}
+}
+
+@inproceedings{header-space-analysis,
+  author = {Kazemian, Peyman and Varghese, George and McKeown, Nick},
+  title = {Header Space Analysis: Static Checking for Networks},
+  booktitle = {Proceedings of the 9th USENIX Conference on Networked Systems Design and Implementation},
+  series = {NSDI'12},
+  year = {2012},
+  location = {San Jose, CA},
+  pages = {9--9},
+  numpages = {1},
+  url = {http://dl.acm.org/citation.cfm?id=2228298.2228311},
+  acmid = {2228311},
+  publisher = {USENIX Association},
+} 
+
+@inproceedings{batfish-smt-backend,
+  author = {Lopes, Nuno P. and Bj{\o}rner, Nikolaj and Godefroid, Patrice and Jayaraman, Karthick and Varghese, George},
+  title = {Checking Beliefs in Dynamic Networks},
+  booktitle = {Proceedings of the 12th USENIX Conference on Networked Systems Design and Implementation},
+  series = {NSDI'15},
+  year = {2015},
+  isbn = {978-1-931971-218},
+  location = {Oakland, CA},
+  pages = {499--512},
+  numpages = {14},
+  url = {http://dl.acm.org/citation.cfm?id=2789770.2789805},
+  acmid = {2789805},
+  publisher = {USENIX Association},
+  address = {Berkeley, CA, USA},
+} 
+
+@inproceedings{batfish,
+  address = {Oakland, CA},
+  author = {Ari Fogel and Stanley Fung and Luis Pedrosa and Meg Walraed-Sullivan and Ramesh Govindan and Ratul Mahajan and Todd Millstein},
+  booktitle = {NSDI},
+  month = May,
+  publisher = {USENIX Association},
+  title = {A General Approach to Network Configuration Analysis},
+  year = {2015},
+  url = {https://dl.acm.org/citation.cfm?id=2789803}
+}
+
+@inproceedings{nettle,
+  author = {Voellmy, Andreas and Hudak, Paul},
+  title = {Nettle: A Language for Configuring Routing Networks},
+  booktitle = {DSL},
+  series = {DSL '09},
+  year = {2009},
+  isbn = {978-3-642-03033-8},
+  location = {Oxford, UK},
+  pages = {211--235},
+  numpages = {25},
+  doi = {10.1007/978-3-642-03034-5_11},
+  acmid = {1575965},
+  publisher = {Springer-Verlag},
+} 
+
+@inproceedings{borderguard,
+  author = {Feamster, Nick and Mao, Zhuoqing Morley and Rexford, Jennifer},
+  title = {BorderGuard: Detecting Cold Potatoes from Peers},
+  booktitle = {IMC},
+  series = {IMC '04},
+  year = {2004},
+  isbn = {1-58113-821-0},
+  location = {Taormina, Sicily, Italy},
+  pages = {213--218},
+  numpages = {6},
+  doi = {10.1145/1028788.1028815},
+  acmid = {1028815},
+  publisher = {ACM},
+  keywords = {BGP, anomalies, inconsistent advertisement, peering},
+} 
+
+@inproceedings{poiroot,
+  author = {Javed, Umar and Cunha, Italo and Choffnes, David and Katz-Bassett, Ethan and Anderson, Thomas and Krishnamurthy, Arvind},
+  title = {PoiRoot: Investigating the Root Cause of Interdomain Path Changes},
+  booktitle = {SIGCOMM},
+  series = {SIGCOMM '13},
+  year = {2013},
+  isbn = {978-1-4503-2056-6},
+  location = {Hong Kong, China},
+  pages = {183--194},
+  numpages = {12},
+  url = {http://doi.acm.org/10.1145/2486001.2486036},
+  doi = {10.1145/2486001.2486036},
+  acmid = {2486036},
+  publisher = {ACM},
+  keywords = {bgp, measurement, monitoring, path changes, root cause analysis},
+} 
+
+
+BGP Related RFCs
+================
+
+@techreport{rfc4271,
+  author =      {Y. Rekhter and T. Li and S. Hares},
+  title =       {A {B}order {G}ateway {P}rotocol 4 ({BGP}-4)},
+  institution = {Network Working Group},
+  year =        2006,
+  type =        {RFC},
+  number =      4271,
+  month =       jan,
+  url =         {https://tools.ietf.org/html/rfc4271}
+}
+
+@techreport{rfc1997,
+  author =      {R. Chandra and P. Traina and T. Li},
+  title =       {{BGP} Communities Attribute},
+  institution = {Network Working Group},
+  year =        1996,
+  type =        {RFC},
+  number =      1997,
+  month =       aug
+}
+
+@techreport{rfc5340,
+  author =      {R. Coltun and D. Ferguson and J. Moy and A. Lindem, Ed.},
+  title =       {{OSPF} for {IPv6}},
+  institution = {Network Working Group},
+  year =        2008,
+  type =        {RFC},
+  number =      5340,
+  month =       jul
+}
+
+@techreport{rfc4456,
+  author =      {T. Bates and E. Chen and R. Chandra},
+  title =       {{BGP} Route Reflection: An Alternative to Full Mesh Internal {BGP} (IBGP)},
+  institution = {Network Working Group},
+  year =        2006,
+  type =        {RFC},
+  number =      4456,
+  month =       apr
+}
+
+Configuration
+=============
+
+@misc{belwue,
+  key = {BelW\"u},
+  title = {{BelW\"u}},
+  howpublished = {https://www.belwue.de/}
+}
+
+@misc{selfnet,
+  key = {Selfnet},
+  title = {{Selfnet}},
+  howpublished = {https://selfnet.de/}
+}
+
+@misc{internet2-configs,
+  key = {Internet2 Configurations},
+  title = {{I}nternet2 Configurations},
+  howpublished = {\url{http://vn.grnoc.iu.edu/Internet2/configs/configs.html}},
+}
+
+@misc{internet2-fees,
+  howpublished = {\url{http://www.internet2.edu/about-us/membership/}},
+  key = {Internet2 Fees},
+  title = {{I}nternet2 Fees}
+}
+
+@misc{internet2-finances,
+  howpublished = {\url{http://www.internet2.edu/about-us/financial-overview}},
+  key = {Internet2 Financials},
+  title = {{I}nternet2 Financials}
+}
+
+@misc{juniper-techlib-policies,
+  title = {{Junos OS}: Routing Policies, Firewall Filters, and Traffic Policers Feature Guide for Routing Devices},
+  key   = {{Junos OS}: Routing Policies, Firewall Filters, and Traffic Policers Feature Guide for Routing Devices},
+  year  = 2016,
+  url   = {https://www.juniper.net/techpubs/en_US/junos14.2/information-products/pathway-pages/config-guide-policy/config-guide-policy.html}
+}
+
+@misc{juniper-techlib-ocx,
+  title = {{BGP} Feature Guide for the {OCX} Series},
+  key   = {{BGP} Feature Guide for the {OCX} Series},
+  year  = 2015,
+  url   = {https://www.juniper.net/techpubs/en_US/junos14.1/information-products/pathway-pages/ocx-series/bgp.html}
+}
+
+BGP Issues
+==========
+
+@misc{number-of-people,
+  key = {International Telecommunication Union},
+  title = {{I}nternational {T}elecommunication {U}nion {S}tatistics},
+  year = {2014}
+}
+
+@article{bgp-commercial-agreements,
+  author = {Liao, Yong and Gao, Lixin and Gu{\'e}rin, Roch and Zhang, Zhi-Li},
+  title = {Safe Interdomain Routing Under Diverse Commercial Agreements},
+  journal = {TON},
+  issue_date = {December 2010},
+  volume = {18},
+  number = {6},
+  month = dec,
+  year = {2010},
+  issn = {1063-6692},
+  pages = {1829--1840},
+  numpages = {12},
+  doi = {10.1109/TNET.2010.2049858},
+  acmid = {1959428},
+  publisher = {IEEE Press},
+  keywords = {commercial agreements, interdomain routing, routing policy},
+} 
+
+@article{rexford-bgp-issues-10,
+  author = {Kevin Butler and Toni Farley and Patrick McDaniel and Jennifer Rexford},
+  journal={IEEE}, 
+  title={A Survey of BGP Security Issues and Solutions}, 
+  year={2010}, 
+  volume={98}, 
+  number={1}, 
+  pages={100-122}, 
+  keywords={Internet;routing protocols;security of data;BGP security;Internet;border gateway protocol;interdomain routing security;Authentication;BGP;authorization;border gateway protocol;integrity;interdomain routing;network security;networks;routing}, 
+  doi={10.1109/JPROC.2009.2034031}, 
+  ISSN={0018-9219}, 
+  month={jan}
+}
+
+@article{why-the-internet-only-just-works,
+  author="Handley, M.",
+  title="Why the Internet only just works",
+  journal="BT Technology Journal",
+  year="2006",
+  volume="24",
+  number="3",
+  pages="119--129",
+  issn="1573-1995",
+  doi="10.1007/s10550-006-0084-z"
+}
+
+@misc{balakrishnan-bgp-overview,
+  author = {Hari Balakrishnan},
+  year = 2009,
+  title = {Interdomain Internet Routing},
+  chapter = 3,
+  url = {http://nms.csail.mit.edu/6829-papers/L4-routing.pdf}
+}
+
+@article{goldberg-bgp-issues-14,
+  acmid = {2668966},
+  address = {New York, NY, USA},
+  articleno = {20},
+  author = {Goldberg, Sharon},
+  doi = {10.1145/2668152.2668966},
+  issn = {1542-7730},
+  issue_Date = {August 2014},
+  journal = {Queue},
+  month = aug,
+  numpages = {14},
+  pages = {20:20--20:33},
+  publisher = {ACM},
+  title = {Why Is It Taking So Long to Secure {Internet} Routing?},
+  volume = {12},
+  year = {2014}
+}
+
+@article{goldberg-routing-policies,
+  author = {Gill, Phillipa and Schapira, Michael and Goldberg, Sharon},
+  title = {A Survey of Interdomain Routing Policies},
+  journal = {SIGCOMM CCR},
+  issue_date = {January 2014},
+  volume = {44},
+  number = {1},
+  month = dec,
+  year = {2013},
+  issn = {0146-4833},
+  pages = {28--34},
+  numpages = {7},
+  doi = {10.1145/2567561.2567566},
+  acmid = {2567566},
+  publisher = {ACM},
+  keywords = {bgp, routing}
+} 
+
+@inproceedings{bgp-market-deployment,
+  author = {Gill, Phillipa and Schapira, Michael and Goldberg, Sharon},
+  title = {Let the Market Drive Deployment: A Strategy for Transitioning to BGP Security},
+  booktitle = {Proceedings of the ACM SIGCOMM 2011 Conference},
+  series = {SIGCOMM},
+  year = {2011},
+  isbn = {978-1-4503-0797-0},
+  location = {Toronto, Ontario, Canada},
+  pages = {14--25},
+  numpages = {12},
+  doi = {10.1145/2018436.2018439},
+  acmid = {2018439},
+  publisher = {ACM},
+  keywords = {bgp, routing, security},
+} 
+
+@inproceedings{ucsd-cenic-10,
+  acmid = {1851220},
+  author = {Turner, Daniel and Levchenko, Kirill and Snoeren, Alex C. and Savage, Stefan},
+  booktitle = {SIGCOMM},
+  doi = {10.1145/1851182.1851220},
+  isbn = {978-1-4503-0201-2},
+  keywords = {failure},
+  location = {New Delhi, India},
+  numpages = {12},
+  pages = {315--326},
+  publisher = {ACM},
+  series = {SIGCOMM '10},
+  title = {California Fault Lines: Understanding the Causes and Impact of Network Failures},
+  year = {2010},
+}
+
+@misc{china-hijack-10,
+  author = {Jim Cowie},
+  howpublished = {\url{http://research.dyn.com/2010/11/chinas-18-minute-mystery/}},
+  note = {Accessed: 2015-03-21},
+  title = {{C}hina's 18-Minute Mystery},
+  year = {2010}
+}
+
+@misc{china-hijack-10-congress,
+  author = {Daniel Slane},
+  title = {2010 Report to {Congress} of the {U.S.}--{China} {Economic} and {Security} {Review} {Commission}},
+  month = sep,
+  year = 2010
+}
+
+@misc{china-hijack-10-cnn,
+  author = {Dugald McConnell},
+  howpublished = {\url{http://www.cnn.com/2010/US/11/17/websites.chinese.servers/}},
+  note = {Accessed: 2015-03-21},
+  title = {{C}hinese company `hijacked' {U.S.} web traffic},
+  year = {2010}
+}
+
+@misc{youtube-hijack-08,
+  author = {Martin Brown},
+  howpublished = {\url{http://research.dyn.com/2008/02/pakistan-hijacks-youtube-1/}},
+  note = {Accessed: 2015-02-20},
+  title = {{P}akistan hijacks {Y}ou{T}ube},
+  year = {2008}
+}
+
+@misc{china-hijack-14,
+  author = {Doug Madory},
+  howpublished = {\url{http://research.dyn.com/2014/11/chinese-routing-errors-redirect-russian-traffic/}},
+  note = {Accessed: 2015-02-20},
+  title = {{C}hinese Routing Errors Redirect {R}ussian Traffic},
+  year = {2014}
+}
+
+@misc{routerbug,
+  author = {Paul Mah},
+  title = {{BGP} bug found in Juniper router software},
+  howpublished = {\url{http://www.techrepublic.com/blog/it-news-digest/bgp-bug-found-in-juniper-router-software/}},
+  year = 2007
+}
+
+@misc{german-national-routing,
+  title = {{Deutsche Telekom: 'Internet data made in Germany should stay in Germany'}},
+  year = 2013,
+  author = {Louisa Schaefer},
+  howpublished = {\url{http://www.dw.com/en/deutsche-telekom-internet-data-made-in-germany-should-stay-in-germany/a-17165891}}
+}
+
+Differential Testing
+====================
+
+@inproceedings{quickcheck,
+  author = {Koen Claessen and John Hughes},
+  title = {{QuickCheck}: A Lightweight Tool for Random Testing of {Haskell} Programs},
+  booktitle = {ICFP},
+  year = 2000,
+  month = sep,
+  address = {Montreal, Canada},
+  pages = {268--279},
+  url = {https://dl.acm.org/citation.cfm?id=1988046}
+}
+
+@inproceedings{differential-testing,
+  author = {Evans, Robert B. and Savoia, Alberto},
+  title = {Differential Testing: A New Approach to Change Detection},
+  booktitle = {ESEC-FSE},
+  year = {2007},
+  location = {Dubrovnik, Croatia},
+  pages = {549--552},
+  numpages = {4},
+  doi = {10.1145/1295014.1295038},
+  acmid = {1295038},
+  publisher = {ACM},
+  keywords = {automated test generation, change impact analysis, differential testing, regression testing, software maintenance, test repair},
+}
+
+Simulators
+==========
+
+@misc{netsim,
+  howpublished = {\url{http://www.boson.com/netsim-cisco-network-simulator}},
+  title = {{N}et{Sim}: Network Simulator},
+  key = {{N}et{Sim}: Network Simulator},
+}
+
+@article{cbgp,
+  author = {Quoitin, B. and Uhlig, S.},
+  title = {Modeling the Routing of an Autonomous System with C-BGP},
+  journal = {IEEE Network},
+  issue_date = {November 2005},
+  volume = {19},
+  month = nov,
+  year = {2005},
+  issn = {0890-8044},
+  pages = {12--19},
+  numpages = {8},
+  doi = {10.1109/MNET.2005.1541716},
+  acmid = {2329745},
+  publisher = {IEEE Press},
+} 
+
+@inproceedings{lseb,
+  title = {Testing Large Scale BGP Security in Replayable Network Environments},
+  author = {Patrick McDaniel and Kevin Butler},
+  booktitle = {DETER},
+  year = 2006
+}
+
+@inproceedings{gtnets, 
+  author={G. F. Riley}, 
+  booktitle={WSC}, 
+  title={Large-scale network simulations with GTNetS}, 
+  year={2003}, 
+  volume={1}, 
+  pages={676-684 Vol.1}, 
+  keywords={computational complexity;computer networks;digital simulation;software packages;workstation clusters;GTNetS;Georgia Tech Network Simulator;design decisions;disk space usage;event list size;large-scale network simulations;large-scale topologies;memory reduction;memory requirements;network simulation engines;network simulation environment design;packet-level log file;performance bottlenecks;performance experiments;simulation events;workstations;Analytical models;Computational modeling;Computer networks;Computer simulation;Discrete event simulation;Educational institutions;Large-scale systems;Network topology;Protocols;Scalability}, 
+  doi={10.1109/WSC.2003.1261483}, 
+  month=dec,
+}
+
+Solver Aided Tools
+==================
+
+@inbook{distributed-places,
+  author = {Tew, Kevin and Swaine, James and Flatt, Matthew and Findler, Robert Bruce and Dinda, Peter},
+  title = {Distributed Places},
+  booktitle = {TFP},
+  year = 2014,
+  doi="10.1007/978-3-642-45340-3_3"
+}
+
+@inproceedings{rosette,
+  author = {Torlak, Emina and Bodik, Rastislav},
+  title = {A Lightweight Symbolic Virtual Machine for Solver-aided Host Languages},
+  booktitle = {PLDI},
+  series = {PLDI '14},
+  year = {2014},
+  isbn = {978-1-4503-2784-8},
+  location = {Edinburgh, United Kingdom},
+  pages = {530--541},
+  numpages = {12},
+  doi = {10.1145/2594291.2594340},
+  acmid = {2594340},
+  publisher = {ACM},
+  keywords = {solver-aided languages, symbolic virtual machine},
+} 
+
+@inproceedings{rosette-onward,
+  author = {Torlak, Emina and Bodik, Rastislav},
+  title = {Growing Solver-aided Languages with Rosette},
+  booktitle = {Onward!},
+  series = {Onward! 2013},
+  year = {2013},
+  isbn = {978-1-4503-2472-4},
+  location = {Indianapolis, Indiana, USA},
+  pages = {135--152},
+  numpages = {18},
+  doi = {10.1145/2509578.2509586},
+  acmid = {2509586},
+  publisher = {ACM},
+  keywords = {solver-aided languages},
+} 
+
+@inproceedings{smten,
+  author = {Uhler, Richard and Dave, Nirav},
+  title = {Smten with Satisfiability-based Search},
+  booktitle = {OOSPLA},
+  series = {OOPSLA},
+  year = {2014},
+  isbn = {978-1-4503-2585-1},
+  location = {Portland, Oregon, USA},
+  pages = {157--176},
+  numpages = {20},
+  doi = {10.1145/2660193.2660208},
+  acmid = {2660208},
+  publisher = {ACM},
+  keywords = {domain-specific language, haskell, satisfiability, satisfiability modulo theories},
+} 
+
+@inproceedings{xcert,
+  author = {Tatlock, Zachary and Lerner, Sorin},
+  title = {Bringing Extensibility to Verified Compilers},
+  booktitle = {PLDI},
+  series = {PLDI '10},
+  year = {2010},
+  isbn = {978-1-4503-0019-3},
+  location = {Toronto, Ontario, Canada},
+  pages = {111--121},
+  numpages = {11},
+  doi = {10.1145/1806596.1806611},
+  acmid = {1806611},
+  publisher = {ACM},
+  keywords = {compiler optimization, correctness, extensibility},
+} 
+
+@inproceedings{bug-assist,
+  author = {Jose, Manu and Majumdar, Rupak},
+  booktitle = {CAV},
+  title = {{Bug-Assist}: assisting fault localization in {ANSI-C} programs},
+  year = {2011},
+  doi="10.1007/978-3-642-22110-1_40",
+}
+
+@inproceedings{executable-biology,
+  author = {Koksal, Ali Sinan and Pu, Yewen and Srivastava, Saurabh and Bodik, Rastislav and Fisher, Jasmin and Piterman, Nir},
+  title = {Synthesis of Biological Models from Mutation Experiments},
+  acmid = {2429125},
+  booktitle = {POPL},
+  doi = {10.1145/2429069.2429125},
+  isbn = {978-1-4503-1832-7},
+  keywords = {executable biology, program synthesis, specification ambiguity analysis},
+  location = {Rome, Italy},
+  numpages = {14},
+  pages = {469--482},
+  publisher = {ACM},
+  series = {POPL '13},
+  year = {2013},
+}
+
+@inproceedings{sketch,
+  author = {Armando Solar-Lezama and Liviu Tancau and Rastislav Bodik and Vijay Saraswat and Sanjit A. Seshia},
+  booktitle = {ASPLOS},
+  title = {Combinatorial Sketching for Finite Programs},
+  year = 2006,
+  doi = {10.1145/1168917.1168907},
+}
+
+@inproceedings{leon,
+  author = {Suter, Philippe and K\"{o}ksal, Ali Sinan and Kuncak, Viktor},
+  booktitle = {SAS},
+  title = {Satisfiability modulo recursive programs},
+  year = {2011},
+  doi="10.1007/978-3-642-23702-7_23"
+}
+
+@conference{miniatur,
+  author = {Dolby, J. and Vaziri, M. and Tip, F.},
+  booktitle = {FSE},
+  keywords = {app},
+  title = {Finding bugs efficiently with a {SAT} solver},
+  year = {2007},
+  doi = {10.1145/1287624.1287653},
+}
+
+@inproceedings{klee,
+  author = {Cadar, Cristian and Dunbar, Daniel and Engler, Dawson},
+  booktitle = {OSDI},
+  title = {{KLEE}: unassisted and automatic generation of high-coverage tests for complex systems programs},
+  year = {2008},
+  url = {http://dl.acm.org/citation.cfm?id=1855741.1855756},
+}
+
+@inproceedings{cbmc,
+  author = {Clarke, Edmund and Kroening, Daniel and Lerda, Flavio},
+  booktitle = {TACAS},
+  title = {A Tool for Checking {ANSI-C} Programs},
+  year = {2004},
+  doi="10.1007/978-3-540-24730-2_15",
+}
+
+@inproceedings{dafny,
+  author = {Leino, K. Rustan M.},
+  title = {Dafny: An Automatic Program Verifier for Functional Correctness},
+  acmid = {1939161},
+  booktitle = {LPAR},
+  isbn = {3-642-17510-4, 978-3-642-17510-7},
+  location = {Dakar, Senegal},
+  numpages = {23},
+  pages = {348--370},
+  publisher = {Springer-Verlag},
+  series = {LPAR'10},
+  url = {http://dl.acm.org/citation.cfm?id=1939141.1939161},
+  year = {2010},
+}
+
+@techreport{boogie,
+  author = {K. Rustan M. Leino},
+  institution = {Microsoft Research},
+  month = jun,
+  title = {This is {Boogie} 2},
+  url = {http://research-srv.microsoft.com/en-us/um/people/leino/papers/krml178.pdf},
+  year = {2008},
+}
+
+@inproceedings{predicate-abstraction,
+  author = {Graf, Susanne and Sa\"{\i}di, Hassen},
+  title = {Construction of Abstract State Graphs with {PVS}},
+  booktitle = {CAV},
+  acmid = {733618},
+  address = {London, UK, UK},
+  isbn = {3-540-63166-6},
+  numpages = {12},
+  pages = {72--83},
+  publisher = {Springer-Verlag},
+  series = {CAV '97},
+  url = {http://dl.acm.org/citation.cfm?id=647766.733618},
+  year = {1997},
+}
+
+HoTTSQL
+=======
+
+@article{hottsql,
+  author = {{Chu}, S. and {Weitz}, K. and {Cheung}, A. and {Suciu}, D.},
+  title = "{HoTTSQL: Proving Query Rewrites with Univalent SQL Semantics}",
+  journal = {ArXiv},
+  eprint = {1607.04822},
+  primaryClass = "cs.PL",
+  keywords = {Computer Science - Programming Languages, Computer Science - Databases, Computer Science - Logic in Computer Science},
+  year = 2016,
+  month = jul,
+  url = {https://arxiv.org/abs/1607.04822v1},
+}
+
+
+@inproceedings{k-relations,
+  author    = {Todd J. Green and Gregory Karvounarakis and Val Tannen},
+  title     = {Provenance semirings},
+  booktitle = {{PODS}},
+  pages     = {31--40},
+  year      = {2007}
+}
+
+@Book{hott-book,
+  author =    {{The Univalent Foundations Program}},
+  title =     {Homotopy Type Theory: Univalent Foundations of Mathematics},
+  publisher = {\url{https://homotopytypetheory.org/book}},
+  address =   {Institute for Advanced Study},
+  year =      2013}
+
+@inproceedings{sql-hardness-cq-set,
+  author    = {Ashok K. Chandra and Philip M. Merlin},
+  title     = {Optimal Implementation of Conjunctive Queries in Relational Data Bases},
+  booktitle = {{STOC}},
+  pages     = {77--90},
+  publisher = {{ACM}},
+  year      = {1977}
+}
+
+@inproceedings{sql-hardness-cq-bag-equality,
+  author    = {Surajit Chaudhuri and Moshe Y. Vardi},
+  title     = {On the Complexity of Equivalence between Recursive and Nonrecursive
+               Datalog Programs},
+  booktitle = {{PODS}},
+  pages     = {107--116},
+  publisher = {{ACM} Press},
+  year      = {1994}
+}
+
+@article{sql-hardness-cqunion-set,
+  author    = {Yehoshua Sagiv and Mihalis Yannakakis},
+  title     = {Equivalences Among Relational Expressions with the Union and Difference Operators},
+  journal   = {J. {ACM}},
+  volume    = {27},
+  number    = {4},
+  pages     = {633--655},
+  year      = {1980}
+}
+
+@article{sql-hardness-cqunion-bag-containment,
+  author    = {Yannis E. Ioannidis and Raghu Ramakrishnan},
+  title     = {Containment of Conjunctive Queries: Beyond Relations as Sets},
+  journal   = {{ACM} Trans. Database Syst.},
+  volume    = {20},
+  number    = {3},
+  pages     = {288--324},
+  year      = {1995}
+}
+
+@inproceedings{sql-hardness-cqex-set,
+  author    = {Ron van der Meyden},
+  title     = {The Complexity of Querying Indefinite Data about Linearly Ordered Domains},
+  booktitle = {{PODS}},
+  pages     = {331--345},
+  year      = {1992}
+}
+
+@inproceedings{sql-hardness-cqex-bag,
+  author    = {T. S. Jayram and Phokion G. Kolaitis and Erik Vee},
+  title     = {The containment problem for {REAL} conjunctive queries with inequalities},
+  booktitle = {{PODS}},
+  pages     = {80--89},
+  publisher = {{ACM}},
+  year      = {2006}
+}
+
+@article{sql-hardness-first-order,
+  author    = {Boris Avraamovich Trakhtenbrot},
+  title     = {Impossibility of an algorithm for the decision problem in finite classes},
+  journal   = {Dok. Akad. Nauk USSR},
+  volume    = {70},
+  number    = {1},
+  pages     = {569--572},
+  year      = {1950}
+}
+
+x86 Semantics
+=============
+
+@inproceedings{heule-x86-synthesis,
+  author    = {Stefan Heule and Eric Schkufza and Rahul Sharma and Alex Aiken},
+  title     = {Stratified Synthesis: Automatically Learning the x86-64 Instruction Set},
+  booktitle = {PLDI},
+  year      = {2016},
+  month     = jun,
+  publisher = {{ACM}},
+  doi       = {10.1145/2908080.2908121},
+}
+
+@inproceedings{rocksalt,
+  author = {Morrisett, Greg and Tan, Gang and Tassarotti, Joseph and Tristan, Jean-Baptiste and Gan, Edward},
+  title = {RockSalt: Better, Faster, Stronger SFI for the x86},
+  booktitle = {PLDI},
+  series = {PLDI '12},
+  year = {2012},
+  isbn = {978-1-4503-1205-9},
+  location = {Beijing, China},
+  pages = {395--404},
+  numpages = {10},
+  doi = {10.1145/2254064.2254111},
+  acmid = {2254111},
+  publisher = {ACM},
+  keywords = {domain-specific languages, software fault isolation},
+} 
+
+@inproceedings{stoke,
+  author = {Schkufza, Eric and Sharma, Rahul and Aiken, Alex},
+  title = {Stochastic Superoptimization},
+  booktitle = {ASPLOS},
+  series = {ASPLOS '13},
+  year = {2013},
+  isbn = {978-1-4503-1870-9},
+  location = {Houston, Texas, USA},
+  pages = {305--316},
+  numpages = {12},
+  doi = {10.1145/2451116.2451150},
+  acmid = {2451150},
+  publisher = {ACM},
+  keywords = {64-bit, binary, markov chain monte carlo, mcmc, smt, stochastic search, superoptimization, x86, x86-64},
+} 
+
+BGP Replacements
+================
+
+@inproceedings{consesus-routing,
+  author = {John, John P. and Katz-Bassett, Ethan and Krishnamurthy, Arvind and Anderson, Thomas and Venkataramani, Arun},
+  title = {Consensus Routing: The Internet As a Distributed System},
+  booktitle = {Proceedings of the 5th USENIX Symposium on Networked Systems Design and Implementation},
+  series = {NSDI'08},
+  year = {2008},
+  isbn = {111-999-5555-22-1},
+  location = {San Francisco, California},
+  pages = {351--364},
+  numpages = {14},
+  url = {http://dl.acm.org/citation.cfm?id=1387589.1387614},
+  acmid = {1387614},
+  publisher = {USENIX Association},
+} 
+
+@inproceedings{negotiation-routing,
+  author = {Mahajan, Ratul and Wetherall, David and Anderson, Thomas},
+  title = {Negotiation-based Routing Between Neighboring ISPs},
+  booktitle = {NSDI},
+  series = {NSDI'05},
+  year = {2005},
+  pages = {29--42},
+  numpages = {14},
+  url = {http://dl.acm.org/citation.cfm?id=1251203.1251206},
+  acmid = {1251206},
+  publisher = {USENIX Association},
+  address = {Berkeley, CA, USA},
+} 
+
+@inproceedings{negotiation-routing-hotnets,
+  year = 2004,
+  title = "Towards coordinated interdomain traffic engineering",
+  author = {Ratul Mahajan and David Wetherall and Tom Anderson},
+  booktitle = {HotNets},
+  url = {http://research.microsoft.com/en-us/um/people/ratul/papers/hotnets2004-tearch.pdf}
+}
+
+Don't Know Paper
+================
+
+@misc{ripe-rpsl,
+  author = {David Meyer and Joachim Schmitz and Cangiz Alaettinoglu},
+  title = {Application of Routing Policy Specification Language ({RPSL}) on the {Internet}},
+  year = {1997}
+}

@@ -1,0 +1,351 @@
+% \|name| or \mathid{name} denotes identifiers and slots in formulas
+\def\|#1|{\mathid{#1}}
+\newcommand{\mathid}[1]{\ensuremath{\mathit{#1}}}
+% \<name> or \codeid{name} denotes computer code identifiers
+\def\<#1>{\codeid{#1}}
+% \protected\def\codeid#1{\ifmmode{\mbox{\ttfamily{#1}}}\else{\ttfamily #1}\fi}
+\protected\def\codeid#1{\ifmmode{\mbox{\smaller\ttfamily{#1}}}\else{\smaller\ttfamily #1}\fi}
+
+\newcommand{\underscore}{\underline{\hspace{.45em}}}
+\newcommand{\denoteFn}{\denote{\; \underscore \;}}
+
+\newcommand{\stoke}{\textsc{Stoke}\xspace}
+\newcommand{\SaltShaker}{\textsc{SaltShaker}\xspace}
+\newcommand{\Bagpipe}{\textsc{Bagpipe}\xspace}
+\newcommand{\StagedFormalVerification}{Staged Formal Verification\xspace}
+\newcommand{\BGPV}{\textsc{bgpv}\xspace}
+\newcommand{\SALV}{STV\xspace}
+\newcommand{\SALVendofsentence}{STV\@}
+\newcommand{\SpaceSearch}{\textsc{SpaceSearch}\xspace}
+\newcommand{\xeightysix}{x86\xspace}
+
+\newcommand{\saltRockBugs}{6\xspace}
+\newcommand{\saltStokeBugs}{1\xspace}
+\newcommand{\saltInstrVarsApprox}{15,000\xspace}
+\newcommand{\saltInstrVars}{15,255\xspace}
+\newcommand{\saltOpcodes}{40\xspace}
+\newcommand{\saltAllTimeApproxH}{2h\xspace}
+\newcommand{\saltAllTimeH}{1.8h\xspace}
+\newcommand{\saltAvgInstrTimeS}{0.43s\xspace}
+\newcommand{\saltFlippedBitPercentage}{72.7\%\xspace}
+\newcommand{\saltFalsePositive}{57\xspace}
+
+\newif\ifauthorcomments
+% Comment out to eliminate author comments.
+\authorcommentstrue
+
+\ifauthorcomments
+  \newcommand{\todo}[1]{\textcolor{red}{\textbf{[[#1]]}}}
+  \newcommand{\future}[1]{\textcolor{blue}{\textbf{[[#1]]}}}
+  \newcommand{\ztodo}[1]{#1}
+\else
+  \newcommand{\todo}[1]{\relax}
+  \newcommand{\future}[1]{\relax}
+  \newcommand{\ztodo}[1]{}
+  \newcommand{\diff}[2]{#1}
+\fi
+\newcommand{\mde}[1]{\todo{Mike: #1}}
+
+\newcommand{\ie}{i.e.\@\xspace}
+\newcommand{\eg}{e.g.\@\xspace}
+\newcommand{\cf}{cf.\@\xspace}
+\newcommand{\etc}{etc.\@\xspace}
+\newcommand{\etal}{et~al.\@\xspace}
+\newcommand{\cmp}{cmp.\@\xspace}
+
+\newcommand{\totalInconsistencies}{19\xspace}
+\newcommand{\InternetTwoRouters}{10\xspace}
+\newcommand{\InternetTwoLoc}{100,651\xspace}
+\newcommand{\InternetTwoCommands}{76,448\xspace}
+\newcommand{\InternetTwoSupportedCommands}{44,474\xspace}
+\newcommand{\InternetTwoSupportedPercent}{58\%\xspace}
+\newcommand{\InternetTwoNeighbors}{274\xspace}
+\newcommand{\numberOfCBGPTests}{8,401\xspace}
+\newcommand{\totalCBGPTestRuntime}{??\%\xspace}
+\newcommand{\nCBGPissues}{1\xspace}
+
+\newcommand{\dynamic}[2]{#2}
+
+\newcommand{\specLOC}{362\xspace}
+\newcommand{\bgpvLOC}{3781\xspace}
+
+\newcommand{\martianTotalTime}{1,178s (20min)\xspace}
+\newcommand{\martianPaths}{3,114\xspace}
+\newcommand{\martianInconsistencies}{0\xspace}
+\newcommand{\martianFalsePositives}{0\xspace}
+
+\newcommand{\martianInsaneTotalTime}{1,194s (20min)\xspace}
+\newcommand{\martianInsanePaths}{3,114\xspace}
+
+\newcommand{\bteTotalTime}{28,594s (8h)\xspace}
+\newcommand{\btePaths}{115,330\xspace}
+\newcommand{\bteInconsistencies}{5\xspace}
+\newcommand{\bteFalsePositives}{0\xspace}
+
+\newcommand{\prefTotalTime}{260,790s (72h)\xspace}
+\newcommand{\prefPaths}{971,680\xspace}
+\newcommand{\prefInconsistencies}{14\xspace}
+\newcommand{\prefFalsePositives}{0\xspace}
+
+\newcommand{\spotInstanceCost}{\$0.36/h\xspace}
+\newcommand{\totalTime}{81h\xspace}
+\newcommand{\totalCost}{\$30\xspace}
+
+% ribs
+\newcommand{\adjRIBsIn}{\codeid{adjRIBsIn}\xspace}
+\newcommand{\locRIB}{\codeid{locRIB}\xspace}
+\newcommand{\adjRIBsOut}{\codeid{adjRIBsOut}\xspace}
+
+% rosette 
+\newcommand{\verify}{\mathit{verify}}
+\newcommand{\holds}{\mathit{holds}}
+\newcommand{\lift}{\mathit{lift}}
+\newcommand{\query}{\mathit{query}}
+
+\newcommand{\workerPlace}{\mathtt{worker\hbox{-}place}}
+\newcommand{\dynamicPlace}{\mathtt{dynamic\hbox{-}place}}
+
+\newcommand{\runRunnable}{\mathit{call}}
+\newcommand{\Runnable}{\mathit{Callable}}
+
+\newcommand{\ssSpace}{\mathit{Space}}
+\newcommand{\ssEmpty}{\mathit{empty}}
+\newcommand{\ssSingle}{\mathit{single}}
+\newcommand{\ssUnion}{\mathit{union}}
+\newcommand{\ssBind}{\mathit{bind}}
+\newcommand{\ssMap}{\mathit{map}}
+\newcommand{\ssSearch}{\mathit{search}}
+\newcommand{\ssPreciseSearch}{\mathit{preciseSearch}}
+\newcommand{\ssHeuristicSearch}{\mathit{heuristicSearch}}
+\newcommand{\ssDistributedSearch}{\mathit{callableBind}}
+\newcommand{\ssFree}{\mathit{enumerate}}
+\newcommand{\axiomOfChoice}{\mathit{choose}}
+\newcommand{\denote}[1]{\llbracket#1\rrbracket}
+
+\newcommand{\xorInt}{\mathit{i32}}
+\newcommand{\xorResult}{\mathit{counterExample}}
+\newcommand{\idempotent}{\mathit{idempotent}}
+\newcommand{\true}{\mathit{true}}
+\newcommand{\false}{\mathit{false}}
+\newcommand{\symbolic}{\mathit{symbolic}}
+\newcommand{\fenumerate}{\mathit{enumerate}}
+\newcommand{\fset}{\codeid{set}}
+\newcommand{\Symbolic}{\mathit{Symbolic}}
+\newcommand{\return}{\mathit{return}}
+\newcommand{\bind}{\mathit{bind}}
+\newcommand{\solver}{\mathit{solver}}
+\newcommand{\solverSound}{\mathit{solverSound}}
+\newcommand{\solverSpec}{\mathit{solverSpec}}
+
+% math
+\newcommand{\argmax}{\mathit{argmax}}
+\newcommand{\set}{\mathit{Set}}
+\newcommand{\powerset}{\mathcal{P}}
+\newcommand{\nat}{\mathbb{N}}
+\newcommand{\listtype}{\mathit{list}}
+\newcommand{\listlast}{\mathit{last}}
+\newcommand{\Boolean}{\mathit{bool}}
+\newcommand{\Integer}{\mathbb{Z}}
+\newcommand{\Prop}{\mathit{Prop}}
+
+% programming
+\newcommand{\ite}[3]{\text{if } #1 \text{ then } #2 \text{ else } #3}
+\newcommand{\assign}[1]{\text{let } #1 \text{ in }}
+
+% attributes stuff
+\newcommand{\pathattrs}{\mathcal{A}}
+\newcommand{\notavailable}{\mathit{na}}
+\newcommand{\importrule}{\mathit{imp}}
+\newcommand{\exportrule}{\mathit{exp}}
+\newcommand{\incoming}{\mathit{in}}
+\newcommand{\outgoing}{\mathit{out}}
+\newcommand{\injected}{\mathit{injected}}
+\newcommand{\localpref}{\mathit{pref}}
+\newcommand{\aspath}{\mathit{path}}
+\newcommand{\communities}{\mathit{communities}}
+\newcommand{\emptyRIBs}{\mathit{empty}}
+
+% topology stuff
+\newcommand{\asn}{\mathit{asn}}
+\newcommand{\mode}{\mathit{md}}
+\newcommand{\ibgp}{\mathit{ibgp}}
+\newcommand{\ebgp}{\mathit{ebgp}}
+
+% policies
+\newcommand{\aspathok}{\mathit{goodAsPathOrigin}}
+\newcommand{\nomartian}{\mathit{noMartian}}
+\newcommand{\blocktoexternal}{\mathit{blockToExternal}}
+\newcommand{\goodpref}{\mathit{goodPreference}}
+\newcommand{\staticexport}{\mathit{staticExport}}
+\newcommand{\martian}{\mathit{martian}}
+\newcommand{\bte}{{\codeid{BLOCK\_TO\_EXTERNAL}}}
+\newcommand{\bteShort}{\codeid{BTE}}
+\newcommand{\relation}{\mathit{relation}}
+\newcommand{\avalue}{\mathit{value}}
+\newcommand{\peer}{\mathit{peer}}
+\newcommand{\provider}{\mathit{provider}}
+\newcommand{\customer}{\mathit{customer}}
+\newcommand{\noexport}{{\codeid{NO\_EXPORT}}}
+\newcommand{\converges}{\mathit{convergence}}
+\newcommand{\evolvesInto}{\mathit{evolvesInto}}
+\newcommand{\highPeers}{{\codeid{HIGH\_PEERS}}}
+\newcommand{\lowPeers}{{\codeid{LOW\_PEERS}}}
+\newcommand{\highCustomers}{{\codeid{HIGH}}}
+\newcommand{\lowCustomers}{{\codeid{LOW}}}
+
+% Single AS
+\newcommand{\intneighbors}{\mathcal{N}}
+% \newcommand{\importruleunknown}{\mathit{impU}}
+% \newcommand{\exportruleunknown}{\mathit{expU}}
+
+% tracking 
+\newcommand{\importruletrack}{\mathit{impT}}
+\newcommand{\exportruletrack}{\mathit{expT}}
+\newcommand{\bestIncomingtrack}{\mathit{decT}}
+\newcommand{\original}{\mathit{original}}
+\newcommand{\origin}{\mathit{origin}}
+\newcommand{\transmit}{\mathit{transmit}}
+
+
+\newcommand{\option}[1]{\mathit{option}(#1)}
+\newcommand{\None}{\mathit{None}}
+\newcommand{\Some}[1]{\mathit{Some}(#1)}
+
+% integers
+\newcommand{\ssInt}{\mathit{Integer}}
+\newcommand{\ssIntFull}{\mathit{full}}
+\newcommand{\ssIntZero}{\mathit{zero}}
+\newcommand{\ssIntPlus}{\mathit{plus}}
+\newcommand{\ssIntEq}{\mathit{eq}}
+
+% misc
+\newcommand{\bestIncoming}{\mathit{dec}}
+\newcommand{\handleMessages}{\mathit{handle}}
+\newcommand{\reachable}{\mathit{reachable}}
+\newcommand{\injectrule}{\textsc{inj}}
+\newcommand{\forwardrule}{\textsc{fwd}}
+\newcommand{\stepping}{\textsc{step}}
+\newcommand{\initing}{\textsc{init}}
+\newcommand{\specificationH}{\mathit{specHolds}}
+\newcommand{\fastspecification}{\mathit{specHoldsFast}}
+\newcommand{\trackingok}{\mathit{trackingOk}}
+\newcommand{\allTrackingOk}{\mathit{enumerateTrackingOk}}
+\newcommand{\initialNetworkReduction}{\textsc{inr}\xspace}
+
+% At least 90% of every float page must be taken up by
+% floats; there will be no page with more than 10% white space.
+\def\topfraction{.9}
+\def\dbltopfraction{\topfraction}
+\def\floatpagefraction{\topfraction}     % default .5
+\def\dblfloatpagefraction{\topfraction}  % default .5
+\def\textfraction{.1}
+
+%% Bring items closer together in list environments
+%% This doesn't work with an optional argument to the list environment.
+% Prevent infinite loops
+\let\Itemize =\itemize    
+\let\Enumerate =\enumerate
+\let\Description =\description
+% Zero the vertical spacing parameters
+\def\Nospacing{\itemsep=0pt\topsep=0pt\partopsep=0pt\parskip=0pt\parsep=0pt}
+% Redefine the environments in terms of the original values
+\renewenvironment{itemize}{\Itemize\Nospacing}{\endlist}
+\renewenvironment{enumerate}{\Enumerate\Nospacing}{\endlist}
+\renewenvironment{description}{\Description\Nospacing}{\endlist}
+
+
+% % HORRIBLE!
+% \renewcommand{\baselinestretch}{.993}
+
+% HoTT SQL
+
+\newcommand\sem{\textsl{HoTT}\textsc{SQL}\xspace}
+
+\newcommand{\nameCol}{\texttt{name}}
+
+\newcommand{\sqlString}{\texttt{string}}
+\newcommand{\sqlBool}{\texttt{bool}}
+\newcommand{\sqlInt}{\texttt{int}}
+
+\newcommand{\lambdaFn}[2]{\lambda \; {#1} \;.\;{#2}}
+\renewcommand{\mathtt}[1]{{\textrm {\tt {#1}}}}
+\newcommand{\D}[1]{\lbr{#1}\rbr}
+
+\newcommand{\N}{\mathds{N}}
+\newcommand{\sep}{~|~}
+\newcommand{\Context}{\Gamma}
+\newcommand{\context}{g}
+\newcommand{\Schema}{\texttt{Schema}}
+\newcommand{\schema}{\sigma}
+\newcommand{\tuple}{t}
+\newcommand{\cast}{c}
+\newcommand{\proj}{\cast}
+\newcommand{\pred}{p}
+\newcommand{\expr}{e}
+\newcommand{\column}{a}
+\newcommand{\nomial}{n}
+\newcommand{\zero}{\textbf{0}}
+\newcommand{\one}{\textbf{1}}
+
+\newcommand{\leaf}[1]{\texttt{leaf} \; #1}
+\newcommand{\node}[2]{\texttt{node} \; #1 \; #2}
+\newcommand{\emptySchema}{\texttt{empty}}
+
+\newcommand{\denoteQuery}[3]{\denote{#1 \vdash #2 : #3}}
+\newcommand{\denoteExpr}[3]{\denote{#1 \vdash #2 : #3}}
+\newcommand{\denoteProj}[3]{\denote{#1 : #2 \Rightarrow #3}}
+\newcommand{\denotePred}[2]{\denote{#1 \vdash #2}}
+\newcommand{\denoteTable}[1]{\denote{#1}}
+
+\newcommand{\intro}{\lambda \; \context. \;}
+\newcommand{\introt}{\lambda \; \tuple. \;}
+\newcommand{\intros}{\lambda \; \context \; \tuple. \;}
+\newcommand{\callQuery}[3]{\denoteQuery{#1}{#2}{#3} \; \context \; \tuple}
+\newcommand{\callExpr}[3]{\denoteExpr{#1}{#2}{#3} \; \context}
+\newcommand{\callPred}[2]{\denotePred{#1}{#2} \; \context}
+
+\newcommand{\Tuple}{\texttt{Tuple}}
+\newcommand{\Type}{\mathcal{U}}
+\newcommand{\Cardinal}{\mathcal{C}}
+\newcommand{\type}{\tau}
+
+\newcommand{\Pair}[2]{\node{#1}{#2}}
+\newcommand{\mkPair}[2]{(#1,#2)}
+\newcommand{\fst}[1]{#1.1}
+\newcommand{\snd}[1]{#1.2}
+
+\newcommand{\Unit}{\texttt{Unit}}
+\newcommand{\mkUnit}{\texttt{unit}}
+
+\newcommand{\trunc}[1]{\parallel #1 \parallel}
+%\newcommand{\merely}[1]{\| #1 \|}
+\newcommand{\merely}[1]{\left\lVert#1\right\rVert}
+\newcommand{\negate}[1]{#1 \rightarrow \zero}
+
+% coreSQL keywords
+\newcommand{\SELECT}[2]{\texttt{SELECT} \; #1 \; #2}
+\newcommand{\WHERE}[2]{#1 \; \texttt{WHERE} \; #2}
+\newcommand{\FROM}[1]{\texttt{FROM} \; #1}
+\newcommand{\UNIONALL}[2]{#1 \; \texttt{UNION ALL} \; #2}
+\newcommand{\EXCEPT}[2]{#1 \; \texttt{EXCEPT} \; #2}
+\newcommand{\AND}[2]{#1 \; \texttt{AND} \; #2}
+\newcommand{\OR}[2]{#1 \; \texttt{OR} \; #2}
+\newcommand{\CastPred}[2]{\texttt{CastPred} \; #1 \; #2}
+\newcommand{\CastExpr}[2]{\texttt{CastExpr} \; #1 \; #2}
+\newcommand{\Compose}[2]{ #1 . \; #2}
+\newcommand{\Duplicate}[2]{#1 , #2}
+\newcommand{\DISTINCT}[1]{\texttt{DISTINCT} \; #1}
+\newcommand{\NOT}[1]{\texttt{NOT} \; #1}
+\newcommand{\EXISTS}[1]{\texttt{EXISTS} \; #1}
+\newcommand{\VAL}[1]{\texttt{Val} \; #1}
+\newcommand{\Evaluate}[1]{\texttt{Evaluate} \; #1}
+\newcommand{\TRUE}{\texttt{TRUE}}
+\newcommand{\FALSE}{\texttt{FALSE}}
+\newcommand{\ProjL}{\texttt{Left}}
+\newcommand{\ProjR}{\texttt{Right}}
+\newcommand{\Empty}{\texttt{Empty}}
+\newcommand{\Star}{\texttt{*}}
+\newcommand{\Var}{\texttt{Var}}
+
+\newcommand{\SelectFrom}[2]{\SELECT{#1}{\FROM{#2}}}
+\newcommand{\SelectFromWhere}[3]{\SelectFrom{#1}{\WHERE{#2}{#3}}}

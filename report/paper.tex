@@ -1,0 +1,111 @@
+\documentclass[10pt,nonatbib,preprint]{sigplanconf}
+
+\let\bibfont\undefined
+\usepackage[backend=bibtex, bibencoding=ascii, firstinits=true]{biblatex}
+% biblatex bug workaround
+\makeatletter
+\def\blx@maxline{77}
+\makeatother
+
+\usepackage{bm}
+\usepackage{amsthm}
+\usepackage{amsmath}
+\usepackage{microtype}
+\usepackage{xspace}
+\usepackage{color}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{url}
+\usepackage{verbatim}
+\usepackage{stmaryrd}
+\usepackage{mathtools}
+\usepackage{import}
+\usepackage{xparse}
+\usepackage{multirow}
+\usepackage{latexsym}
+\usepackage[cmtip,all]{xy}
+\usepackage{alltt}
+\usepackage[capitalize]{cleveref}
+\usepackage{bussproofs}
+\usepackage{amssymb}
+\usepackage{upgreek}
+\usepackage{relsize}
+
+\addbibresource{bibliography.bib}
+
+\AtEveryBibitem{%
+  \clearlist{location}%
+  \clearlist{address}%
+  \clearlist{publisher}%
+  \clearlist{publisher}%
+  \clearlist{institution}%
+  \clearlist{language}%
+  \clearname{editor}
+  \clearfield{pages}%
+  \clearfield{month}%
+  \clearfield{doi}%
+  \clearfield{note}%
+  \clearfield{volume}%
+  \clearfield{isbn}%
+  \clearfield{issn}%
+  \clearfield{series}%
+  \clearfield{url}%
+}
+
+\lstset{
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=2,
+  showstringspaces=false,
+  basicstyle=\footnotesize\ttfamily,
+  captionpos=b,
+  mathescape=true,
+  escapechar=\%
+}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{corollary}[theorem]{Corollary}
+
+% Inkscape is evil
+\pdfsuppresswarningpagegroup=1
+
+\input{macros}
+
+\begin{document}
+
+\title{Formal Verification of an SMT based SQL Query Optimizer}
+
+\authorinfo{Isaac Tian           \hspace{1.5em}
+            Amber Ping-Chia Tsai \hspace{1.5em}
+            Konstantin Weitz     }
+           {University of Washington, USA}
+           {\{iytian, pingchia, weitzkon\}@washington.edu\vspace{-1em}}
+\maketitle
+
+% \authorinfo{\vspace{0em}Konstantin Weitz}{\vspace{-0.3em}University of Washington}{weitzkon@cs.uw.edu}
+% \authorinfo{\vspace{0em}Doug Woos}{\vspace{-0.3em}University of Washington}{dwoos@cs.uw.edu}
+% \authorinfo{\vspace{0em}Emina Torlak}{\vspace{-0.3em}University of Washington}{emina@cs.uw.edu}
+% \authorinfo{Michael D. Ernst}{\vspace{-0.3em}University of Washington}{mernst@cs.uw.edu\vspace{-3em}}
+% \authorinfo{Arvind Krishnamurthy}{\vspace{-0.3em}University of Washington}{arvind@cs.uw.edu\vspace{-3em}}
+% \authorinfo{Zachary Tatlock}{\vspace{-0.3em}University of Washington}{ztatlock@cs.uw.edu\vspace{-3em}}
+
+
+\input{structure}
+
+% \input{abstract}
+% \vspace{-10pt}
+% \input{intro}
+% \input{overview}
+% \input{spec}
+% \input{policy}
+% \input{rosette}
+% \input{bagpipe}
+% \input{implementation}
+% %\input{design}
+% \input{eval}
+% \input{related}
+% \input{conclusion}
+
+\printbibliography
+
+\end{document}

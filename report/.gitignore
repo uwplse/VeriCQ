@@ -1,0 +1,12 @@
+*.bak
+.latexrun.db
+abstract.txt
+paper.fls
+paper-blx.bib
+paper.run.xml
+paper.aux
+paper.bbl
+paper.blg
+paper.log
+paper.pdf
+eval/.ipynb_checkpoints/
