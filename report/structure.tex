@@ -369,18 +369,17 @@ shows our evaluation of VeriCQ.
 We evaluate 
 
 
-\begin{figure}
+\begin{figure*}
 \begin{flalign*}
-\quad\; & \SelectFromWhere{\Star}{(\UNIONALL{R}{S})}{\pred} \quad \equiv & \\
-        & \UNIONALL{(\SelectFromWhere{\Star}{R}{\pred})} & \\
-        & {(\SelectFromWhere{\Star}{S}{\pred})} &
+\quad\; & \SelectFromWhere{x_0.a}{R \; \texttt{AS} \; x_0, R \; \texttt{AS} \; x_1, R \; \texttt{AS} \; x_2, R \; \texttt{AS} \; x_3}{x_0.a = x_1.a  \; \texttt{AND} \; x_1.a = x_2.a \; \texttt{AND} \; x_2.a = x_3.a} \quad \equiv & \\
+        & \SelectFromWhere{x_0.a}{R \; \texttt{AS} \; x_0, R \; \texttt{AS} \; x_1, R \; \texttt{AS} \; x_2, R \; \texttt{AS} \; x_3}{x_1.a = x_2.a  \; \texttt{AND} \; x_2.a = x_3.a \; \texttt{AND} \; x_0.a = x_1.a} &
 \end{flalign*}
 \caption{Proving a rewrite rule using \sem.
 Recall that \texttt{UNION ALL} means bag-union in SQL, which in \sem
 is translated to addition of tuple multiplicities in the two input relations.
 }
 \label{fig:union-slct}
-\end{figure}
+\end{figure*}
 
 
 \begin{figure}
