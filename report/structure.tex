@@ -81,6 +81,10 @@ In our evaluation, we show that the use of an SMT
 solver can improve the performance of query equivalence checking by
 orders of magnitude, over a naive implementation.
 
+Our implementation of VeriCQ is open source. See:
+
+\url{https://github.com/uwplse/VeriCQ}
+
 
 \section{VeriCQ}
 
@@ -366,9 +370,25 @@ solver can improve the performance of query equivalence checking by
 orders of magnitude, over a naive implementation. 
 
 \Cref{fig:eval} shows our evaluation of VeriCQ. In our evaluation,
-for some given $n$, we verify a conjunctive query rewrite as 
-shown in \cref{fig:n-cq} for $n = 4$. These rewrites join $n$
+for some given $n$, we verify a conjunctive query rewrite 
+that joins $n$
 tables and select from them using $n - 1$ random equalities.
+This is illustrated in \cref{fig:n-cq} for $n = 4$. 
+
+
+Instead of using an SMT solver, the naive implementation of VeriCQ
+uses brute-force search to enumerate all possible isomorphisms between 
+two conjunctive queries. This algorithm is exponential in $n$.
+
+Using an SMT solver improves the performance of VeriCQ by orders
+of magnitude, over the naive implementation. For example, for queries of size $n = 7$, VeriCQ which
+uses an SMT solver that returns in just $0.1s$, while a naive implementation
+of VeriCQ takes $182s (3min)$ to verify the rewrite. For larger queries,
+the brute-force search timed out after one hour. 
+
+For small queries, the naive implementation is faster than the SMT implementation,
+as it does not have to start the SMT solver. For example, for $n = 2$, the naive implementation
+finishes within $1ms$ (millisecond), whereas the SMT based implementation takes $22ms$. 
 
 \begin{figure*}
 \begin{flalign*}
